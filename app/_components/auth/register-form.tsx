@@ -8,6 +8,10 @@ import Link from "next/link"
 import { Eye, EyeOff, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import axios from "axios"
+import { useRouter } from "next/navigation";
+
+
 
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
@@ -19,7 +23,7 @@ export default function RegisterForm() {
     password: "",
     confirmPassword: "",
   })
-
+  const router = useRouter();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -29,13 +33,28 @@ export default function RegisterForm() {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match")
-      return
-    }
+      return}
+    
     setIsLoading(true)
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    console.log("Register:", formData)
+    try{
+     const res = await axios.post("http://localhost:5000/api/auth/register", {
+      username: formData.fullName,
+      email: formData.email,
+      password: formData.password, // include password in API call
+    })   
+    const response = res.data;
+    if (response.success) {
+       router.push("/auth/login");
+    }
+    else {
+      alert(response.message || "Registration failed");
+    }
+  }catch (err: any) {
+    alert(err.response?.data?.message || "Server error");
+  } finally {
+    setIsLoading(false);
+  }
   }
 
   const passwordStrength = formData.password.length >= 8 ? "strong" : formData.password.length >= 4 ? "medium" : "weak"
