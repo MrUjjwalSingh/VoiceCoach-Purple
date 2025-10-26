@@ -60,12 +60,6 @@ export default function DashboardPage() {
       active: false,
     },
     { label: "History", href: "/history", icon: Clock, active: false },
-    {
-      label: "Words Per Minute",
-      href: "/wpm",
-      icon: Activity,
-      active: false,
-    },
   ]
 
   const handleLogout = () => {
@@ -110,8 +104,7 @@ export default function DashboardPage() {
           <button
             onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
             // UPDATED: Enhanced button UI
-            className="absolute -right-4 top-16 w-8 h-8 bg-card border border-primary/30 rounded-full flex items-center justify-center text-[#111827] dark:text-foreground hover:bg-primary/10 hover:text-primary transition-colors z-50"
-            aria-label={
+            className="absolute -right-4 top-16 w-8 h-8 bg-card border border-primary/30 rounded-full flex items-center justify-center text-slate-300 hover:bg-primary/10 hover:text-primary transition-colors z-50"aria-label={
               isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
             }
           >
