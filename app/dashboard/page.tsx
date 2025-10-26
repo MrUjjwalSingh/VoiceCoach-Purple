@@ -54,8 +54,8 @@ export default function DashboardPage() {
       active: false,
     },
     {
-      label: "Presentation Generator",
-      href: "/presentation-generator",
+      label: "Presentation Suggestor",
+      href: "/presentation-suggestor",
       icon: PieChart,
       active: false,
     },
@@ -100,17 +100,17 @@ export default function DashboardPage() {
         />
 
         {/* --- Sidebar (Fixed) --- */}
-        <aside
-          className={`${
-            isSidebarExpanded ? "w-72" : "w-20"
-          } bg-card/70 backdrop-blur-md border-r border-primary/10 p-6 flex flex-col transition-all duration-300
-          h-screen fixed top-0 left-0 z-40`} // <-- UPDATED: Now fixed
-        >
+         <aside
+           className={`${
+             isSidebarExpanded ? "w-72" : "w-20"
+           } bg-card/90 backdrop-blur-md border-r border-primary/10 p-6 flex flex-col transition-all duration-300
+           h-screen fixed top-0 left-0 z-40`} // <-- UPDATED: Now fixed
+         >
           {/* --- Toggle button (Enhanced UI) --- */}
           <button
             onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
             // UPDATED: Enhanced button UI
-            className="absolute -right-4 top-16 w-8 h-8 bg-card border border-primary/30 rounded-full flex items-center justify-center text-foreground hover:bg-primary/10 hover:text-primary transition-colors z-50"
+            className="absolute -right-4 top-16 w-8 h-8 bg-card border border-primary/30 rounded-full flex items-center justify-center text-[#111827] dark:text-foreground hover:bg-primary/10 hover:text-primary transition-colors z-50"
             aria-label={
               isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
             }
@@ -132,8 +132,8 @@ export default function DashboardPage() {
             </div>
             {isSidebarExpanded && (
               <div>
-                <div className="text-sm text-muted-foreground">Signed in as</div>
-                <div className="font-semibold text-foreground text-xs break-all">
+                <div className="text-sm text-slate-300">Signed in as</div>
+                <div className="font-semibold text-slate-100 text-xs break-all">
                   {username}
                 </div>
               </div>
@@ -152,8 +152,8 @@ export default function DashboardPage() {
                         !isSidebarExpanded && "justify-center"
                       } ${
                         item.active
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+                          ? "bg-primary/20 text-white font-medium"
+                          : "text-slate-300 hover:bg-primary/10 hover:text-white"
                       }`}
                       title={!isSidebarExpanded ? item.label : undefined}
                     >
@@ -169,7 +169,7 @@ export default function DashboardPage() {
           <div className="mt-auto">
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-red-600/10 hover:text-red-500 transition ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-300 hover:bg-red-600/20 hover:text-red-400 transition ${
                 !isSidebarExpanded && "justify-center"
               }`}
               title={!isSidebarExpanded ? "Logout" : undefined}
@@ -181,16 +181,16 @@ export default function DashboardPage() {
         </aside>
 
         {/* --- Main Content Area (With dynamic padding) --- */}
-        <div
-          // UPDATED: This wrapper handles padding for the fixed sidebar
-          className={`relative flex flex-col min-h-screen transition-all duration-300 ${
-            isSidebarExpanded ? "pl-72" : "pl-20"
-          }`}
-        >
-          {/* Original background overlay (now inside the wrapper) */}
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/12 -z-10" />
+           <div
+             // UPDATED: This wrapper handles padding for the fixed sidebar
+             className={`relative flex flex-col min-h-screen transition-all duration-300 ${
+               isSidebarExpanded ? "pl-72" : "pl-20"
+             }`}
+           >
+             {/* Original background overlay (now inside the wrapper) */}
+             <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-primary/20 -z-10" />
 
-          <Navbar isLoggedIn={true} />
+          <Navbar />
 
           {/* UPDATED: Removed transition classes from main */}
           <main className="flex-1 p-8">
@@ -199,21 +199,21 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-2xl font-bold text-foreground mb-1">
-                Dashboard Overview
-              </h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Your analytics at a glance
-              </p>
+               <h2 className="text-2xl font-bold text-foreground mb-1">
+                 Dashboard Overview
+               </h2>
+               <p className="text-sm text-muted-foreground mb-6">
+                 Your analytics at a glance
+               </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Line Chart */}
+                {/* Cards - Update all text colors */}
                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Speech Performance Trend
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       Last 8 Weeks
                     </span>
                   </div>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
                     <svg viewBox="0 0 200 80" className="w-full h-full">
                       <defs>
                         <linearGradient id="lg1" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="rgba(139,92,246,0.28)" />
+                           <stop offset="0%" stopColor="rgba(139,92,246,0.28)" />
                           <stop offset="100%" stopColor="transparent" />
                         </linearGradient>
                       </defs>
@@ -242,12 +242,12 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Bars */}
-                <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
+                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Presentations Analysis
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       Completed vs Practiced
                     </span>
                   </div>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                         className="w-12 bg-primary rounded-t-md"
                         style={{ height: "52%" }}
                       />
-                      <div className="text-xs text-muted-foreground mt-2">
+                      <div className="text-xs text-slate-400 mt-2">
                         Completed
                       </div>
                     </div>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                         className="w-12 bg-secondary rounded-t-md"
                         style={{ height: "78%" }}
                       />
-                      <div className="text-xs text-muted-foreground mt-2">
+                      <div className="text-xs text-slate-400 mt-2">
                         Practiced
                       </div>
                     </div>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                         className="w-12 bg-slate-400 rounded-t-md"
                         style={{ height: "30%" }}
                       />
-                      <div className="text-xs text-muted-foreground mt-2">
+                      <div className="text-xs text-slate-400 mt-2">
                         Sessions
                       </div>
                     </div>
@@ -283,12 +283,12 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Donut */}
-                <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
+                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Most Used Keywords
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       By frequency
                     </span>
                   </div>
@@ -329,22 +329,22 @@ export default function DashboardPage() {
                       <ul className="space-y-2 text-sm">
                         <li className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full bg-primary inline-block" />
-                          <span className="text-foreground">Strategy</span>
-                          <span className="text-muted-foreground ml-auto">
+                          <span className="text-slate-200">Strategy</span>
+                          <span className="text-slate-400 ml-auto">
                             42%
                           </span>
                         </li>
                         <li className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full bg-secondary inline-block" />
-                          <span className="text-foreground">Growth</span>
-                          <span className="text-muted-foreground ml-auto">
+                          <span className="text-slate-200">Growth</span>
+                          <span className="text-slate-400 ml-auto">
                             28%
                           </span>
                         </li>
                         <li className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full bg-slate-400 inline-block" />
-                          <span className="text-foreground">Innovation</span>
-                          <span className="text-muted-foreground ml-auto">
+                          <span className="text-slate-200">Innovation</span>
+                          <span className="text-slate-400 ml-auto">
                             30%
                           </span>
                         </li>
@@ -354,21 +354,21 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Words Per Minute Card */}
-                <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
+                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Words Per Minute
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       Real-time
                     </span>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex-1">
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-slate-400">
                         Total WPM
                       </div>
-                      <div className="text-4xl font-bold text-foreground">
+                      <div className="text-4xl font-bold text-slate-200">
                         {wpm}
                       </div>
                       <div className="mt-3 flex items-center gap-3">
@@ -382,7 +382,7 @@ export default function DashboardPage() {
                         >
                           {pacingStatus}
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-slate-400">
                           • {strategicPauses}
                         </span>
                       </div>
@@ -393,30 +393,30 @@ export default function DashboardPage() {
                   </div>
                 </Card>
 
-                {/* Summary */}
-                <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
+                {/* Summary Card */}
+                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Summary
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       Overview
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-gradient-to-br from-primary/5 to-secondary/4 rounded-lg">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-slate-400">
                         Total Presentations
                       </div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-2xl font-bold text-slate-200">
                         15
                       </div>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-primary/5 to-secondary/4 rounded-lg">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-slate-400">
                         Average Score
                       </div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-2xl font-bold text-slate-200">
                         4.7 / 5.0
                       </div>
                     </div>
@@ -426,12 +426,12 @@ export default function DashboardPage() {
 
               {/* Feedback Section */}
               <div className="mt-6">
-                <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
+                 <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-foreground">
+                    <h3 className="text-sm font-medium text-slate-200">
                       Feedback
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400">
                       Automated insights
                     </span>
                   </div>
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                     {feedback.map((fb, i) => (
                       <li
                         key={i}
-                        className="p-3 bg-muted/5 rounded-md text-foreground"
+                        className="p-3 bg-muted/5 rounded-md text-slate-200"
                       >
                         {fb}
                       </li>
@@ -450,7 +450,7 @@ export default function DashboardPage() {
             </motion.div>
           </main>
 
-          <Footer />
+        <Footer />
         </div>
       </div>
     </ProtectedRoute>
