@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { User, Home, BarChart2, PieChart, FileText, LogOut, Clock, Activity, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useState } from "react"
+import { getUserEmail } from "@/lib/auth-utils"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -18,11 +19,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     try {
-      const email = localStorage.getItem("authEmail")
+      const email = getUserEmail()
       if (email) {
-        const name = email.split("@")[0]
-        // Capitalize first letter and replace dots/underscores with spaces
-        setUsername(name.charAt(0).toUpperCase() + name.slice(1).replace(/[._]/g, " "))
+        setUsername(email)
       }
     } catch (e) {
       // ignore
@@ -40,8 +39,8 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     try {
-      localStorage.removeItem("authToken")
-      localStorage.removeItem("authEmail")
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("user_email")
     } catch (e) {
       // ignore
     }
@@ -59,7 +58,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-[#150427] via-[#22083a] to-[#3b0f63] relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b69] to-[#4c1d95] relative overflow-hidden">
         {/* subtle background accents */}
         <Spotlight className="top-12 left-8" fill="rgba(139, 92, 246, 0.12)" />
         <Spotlight className="top-40 right-16" fill="rgba(168, 123, 250, 0.10)" />
@@ -73,7 +72,7 @@ export default function DashboardPage() {
             <aside 
               className={`${
                 isSidebarExpanded ? "w-72" : "w-20"
-              } bg-card/70 backdrop-blur-md border-r border-primary/10 p-6 flex flex-col transition-all duration-300 relative`}
+              } bg-card/70 backdrop-blur-md border-r border-primary/10 p-6 flex flex-col transition-all duration-300 relative h-screen overflow-hidden`}
             >
               {/* Toggle button */}
               <button
@@ -89,13 +88,13 @@ export default function DashboardPage() {
                 </div>
                 {isSidebarExpanded && (
                   <div>
-                    <div className="text-sm text-muted-foreground">Profile</div>
-                    <div className="font-semibold text-foreground">{username}</div>
+                    <div className="text-sm text-muted-foreground">Signed in as</div>
+                    <div className="font-semibold text-foreground text-xs break-all">{username}</div>
                   </div>
                 )}
               </div>
 
-              <nav className="flex-1">
+              <nav className="flex-1 overflow-y-auto">
                 <ul className="space-y-2">
                   {navItems.map((item) => {
                     const Icon = item.icon
@@ -143,7 +142,7 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Line Chart */}
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Speech Performance Trend</h3>
                       <span className="text-xs text-muted-foreground">Last 8 Weeks</span>
@@ -170,7 +169,7 @@ export default function DashboardPage() {
                   </Card>
 
                   {/* Bars */}
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Presentations Analysis</h3>
                       <span className="text-xs text-muted-foreground">Completed vs Practiced</span>
@@ -192,7 +191,7 @@ export default function DashboardPage() {
                   </Card>
 
                   {/* Donut */}
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Most Used Keywords</h3>
                       <span className="text-xs text-muted-foreground">By frequency</span>
@@ -226,7 +225,7 @@ export default function DashboardPage() {
                   </Card>
 
                   {/* Words Per Minute Card */}
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Words Per Minute</h3>
                       <span className="text-xs text-muted-foreground">Real-time</span>
@@ -249,7 +248,7 @@ export default function DashboardPage() {
                   </Card>
 
                   {/* Summary */}
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Summary</h3>
                       <span className="text-xs text-muted-foreground">Overview</span>
@@ -269,7 +268,7 @@ export default function DashboardPage() {
 
                 {/* Feedback Section */}
                 <div className="mt-6">
-                  <Card className="p-6">
+                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-medium text-foreground">Feedback</h3>
                       <span className="text-xs text-muted-foreground">Automated insights</span>
