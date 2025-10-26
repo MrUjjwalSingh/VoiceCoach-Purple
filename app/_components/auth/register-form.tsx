@@ -17,6 +17,8 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -31,36 +33,68 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Clear previous messages
+    setError("")
+    setSuccess("")
+    
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match")
-      return}
+      setError("Passwords do not match")
+      return
+    }
     
     setIsLoading(true)
-    // Simulate API call
-    try{
-     const res = await axios.post("http://localhost:5000/api/auth/register", {
-      username: formData.fullName,
-      email: formData.email,
-      password: formData.password, // include password in API call
-    })   
-    const response = res.data;
-    if (response.success) {
-       router.push("/auth/login");
+    
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        username: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      })   
+      
+      const response = res.data;
+      if (response.success) {
+        setSuccess("Account created successfully! Redirecting to login...")
+        // Wait a moment to show success message, then redirect
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 1500)
+      } else {
+        setError(response.message || "Registration failed");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Server error. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    else {
-      alert(response.message || "Registration failed");
-    }
-  }catch (err: any) {
-    alert(err.response?.data?.message || "Server error");
-  } finally {
-    setIsLoading(false);
-  }
   }
 
   const passwordStrength = formData.password.length >= 8 ? "strong" : formData.password.length >= 4 ? "medium" : "weak"
 
   return (
     <Card className="glass border border-primary/20 p-8 space-y-6 backdrop-blur-md bg-card/60 shadow-2xl shadow-primary/20">
+      {/* Success Message */}
+      {success && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-center"
+        >
+          {success}
+        </motion.div>
+      )}
+      
+      {/* Error Message */}
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-center"
+        >
+          {error}
+        </motion.div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Full Name Input */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
