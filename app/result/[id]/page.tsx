@@ -31,8 +31,16 @@ import { useRouter } from "next/navigation"
 
 import { PacingChart } from "@/components/PacingChart"
 import { api } from "@/lib/axios-util"
+import { PacingChart } from "./components/pacing-chart"
 
 // --- API Response Interface ---
+interface TranscriptEntry {
+  text: string;
+  start: number;
+  end: number;
+  tags: string[];
+}
+
 interface RecordingData {
   _id: string;
   userId: string;
@@ -59,6 +67,9 @@ interface RecordingData {
     file_size: number;
     format: string;
     _id: string;
+  };
+  transcription: {
+    transcript: TranscriptEntry[];
   };
   createdAt: string;
   updatedAt: string;
@@ -688,6 +699,34 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     </Card>
                   </motion.div>
                 </div>
+              </section>
+
+              {/* --- Pacing Analysis --- */}
+              <section>
+                <motion.h2
+                  className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <FastForward className="w-5 h-5 text-purple-400" />
+                  Pacing Analysis
+                </motion.h2>
+                <motion.div variants={floatingVariants} whileHover="hover">
+                  <Card className="p-6 bg-gradient-to-br from-slate-900/60 to-slate-800/40 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 shadow-xl hover:shadow-purple-500/15 transition-all duration-300">
+                    {recordingData?.transcription?.transcript && recordingData.transcription.transcript.length > 0 ? (
+                      <PacingChart
+                        transcript={recordingData.transcription.transcript}
+                        averageWPM={analysisResult.wpm}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <AlertCircle className="w-12 h-12 text-slate-400 mb-4" />
+                        <p className="text-slate-400">No transcript data available for pacing analysis</p>
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
               </section>
             </motion.div>
           </div>
