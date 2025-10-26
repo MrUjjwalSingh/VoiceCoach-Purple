@@ -16,8 +16,13 @@ import {
   Wand2, // New icon for loading
   Clock,
   MessageSquare,
+  MoreVertical,
+  Eye,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/axios-util";
+import UnifiedSidebar from "../_components/layout/unified-sidebar";
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -112,64 +117,6 @@ const MOCK_SCRIPT = `
 **Closing:** "Thank you. I'm happy to answer any questions."
 `;
 
-// --- Dashboard Sidebar (Active link changed to Content Generation) ---
-const DashboardSidebar = () => (
-  <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 p-6 hidden md:block flex-shrink-0">
-    <motion.div
-      className="flex items-center gap-2 mb-8"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div
-        className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-        variants={floatingVariants}
-        animate="animate"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </motion.div>
-      <h2 className="text-lg font-bold text-white">Analyze</h2>
-    </motion.div>
-
-    <nav className="space-y-2">
-      <motion.a
-        href="#" // Should link to your dashboard page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-sm font-medium">Dashboard</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to your analysis page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileAudio className="w-5 h-5" />
-        <span className="text-sm">Analysis</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to your history page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <Archive className="w-5 h-5" />
-        <span className="text-sm font-medium">History</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to this page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 font-medium transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileText className="w-5 h-5" />
-        <span className="text-sm font-medium">Content Generation</span>
-      </motion.a>
-    </nav>
-  </aside>
-);
 
 // --- Header ---
 const Header = () => (
@@ -196,37 +143,95 @@ const Header = () => (
 export default function ContentGenerationPage() {
   const router = useRouter();
   const [topic, setTopic] = useState("");
-  const [timeLimit, setTimeLimit] = useState("10"); // Default 10 minutes
+  const [timeLimit, setTimeLimit] = useState("5"); // Default 5 minutes
   const [tone, setTone] = useState("Informative"); // Default tone
   const [isLoading, setIsLoading] = useState(false);
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+  const [scriptMetadata, setScriptMetadata] = useState<any>(null);
+  const [pastScripts, setPastScripts] = useState<any[]>([]);
+  const [isLoadingPastScripts, setIsLoadingPastScripts] = useState(false);
+  const [selectedScript, setSelectedScript] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  // Fetch past scripts
+  const fetchPastScripts = async () => {
+    try {
+      setIsLoadingPastScripts(true);
+      const response = await api.get('/content/get');
+      const data = response.data;
+      
+      if (data.contents) {
+        setPastScripts(data.contents);
+      }
+    } catch (error) {
+      console.error('Error fetching past scripts:', error);
+    } finally {
+      setIsLoadingPastScripts(false);
+    }
+  };
+
+  // Load past scripts on component mount
+  useEffect(() => {
+    fetchPastScripts();
+  }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!topic || !timeLimit || !tone) return;
 
     setIsLoading(true);
     setGeneratedScript(null);
 
-    // Simulate script generation delay
-    setTimeout(() => {
+    try {
+      // Make API call to content creation endpoint
+      const response = await api.post('/content/create', {
+        topic: topic,
+        timelimit: timeLimit, // Send as decimal string
+        tone: tone,
+      });
+
+      const data = response.data;
+      
+      if (data.message === "Content created successfully" && data.content && data.content.content) {
+        setGeneratedScript(data.content.content);
+        setScriptMetadata(data.content);
+      } else {
+        console.error('Failed to generate content:', data.message);
+        // Fallback to mock script if API fails
+        setGeneratedScript(MOCK_SCRIPT);
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      // Fallback to mock script if API fails
       setGeneratedScript(MOCK_SCRIPT);
+    } finally {
       setIsLoading(false);
-    }, 4000); // 4-second delay
+    }
   };
 
   const handleReset = () => {
     setGeneratedScript(null);
+    setScriptMetadata(null);
     setTopic("");
-    setTimeLimit("10");
+    setTimeLimit("5");
     setTone("Informative");
+  };
+
+  const handleViewScript = (script: any) => {
+    setSelectedScript(script);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedScript(null);
   };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
-      <DashboardSidebar />
+      <UnifiedSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-72">
         <Header />
 
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
@@ -266,6 +271,55 @@ export default function ContentGenerationPage() {
               </p>
             </motion.div>
 
+            {/* Past Scripts Section */}
+            {pastScripts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="mb-8"
+              >
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Archive className="w-6 h-6 text-purple-400" />
+                  Past Generated Scripts
+                </h2>
+                <div className="grid gap-4">
+                  {pastScripts.map((script, index) => (
+                    <motion.div
+                      key={script._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Card className="p-4 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-slate-800 hover:border-purple-500/30 hover:shadow-purple-500/10 transition-all duration-300">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1">
+                              {script.title}
+                            </h3>
+                            <div className="flex items-center gap-4 text-sm text-slate-400">
+                              <span>Topic: {script.topic}</span>
+                              <span>Time: {script.timelimit} min</span>
+                              <span>Words: {script.wordcount}</span>
+                              <span>{new Date(script.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleViewScript(script)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-purple-400 hover:bg-purple-500/10"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             {/* Content Section */}
             <Card className="p-8 sm:p-10 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-slate-800 shadow-2xl hover:shadow-purple-500/10 hover:border-slate-700 transition-all duration-300">
               {/* === CONDITIONAL CONTENT === */}
@@ -301,13 +355,46 @@ export default function ContentGenerationPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 >
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Your Generated Script
-                  </h3>
-                  <div className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg max-h-[500px] overflow-y-auto">
-                    <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">
-                      {generatedScript}
-                    </pre>
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {scriptMetadata?.title || "Your Generated Script"}
+                    </h3>
+                    {scriptMetadata && (
+                      <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <span>Word Count: {scriptMetadata.wordcount}</span>
+                        <span>Time Limit: {scriptMetadata.timelimit} minutes</span>
+                        <span>Topic: {scriptMetadata.topic}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6 bg-slate-900/50 border border-slate-700 rounded-lg max-h-[500px] overflow-y-auto">
+                    <div className="prose prose-invert max-w-none">
+                      {generatedScript && generatedScript.split('. ').map((section, index) => {
+                        // Check if this is a section header
+                        const isHeader = section.includes('Introduction') || 
+                                       section.includes('Main Points') || 
+                                       section.includes('Conclusion');
+                        
+                        if (isHeader) {
+                          return (
+                            <div key={index} className="mb-4">
+                              <h4 className="text-lg font-semibold text-purple-400 mb-2 border-b border-purple-500/30 pb-1">
+                                {section.replace(/\./g, '')}
+                              </h4>
+                            </div>
+                          );
+                        } else if (section.trim()) {
+                          return (
+                            <div key={index} className="mb-3">
+                              <p className="text-slate-300 leading-relaxed">
+                                {section.replace(/\./g, '')}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
                   </div>
                   <Button
                     variant="link"
@@ -357,16 +444,20 @@ export default function ContentGenerationPage() {
                         Time Limit (in minutes)
                       </label>
                       <div className="relative">
-                        <input
+                        <select
                           id="timeLimit"
-                          type="number"
                           value={timeLimit}
                           onChange={(e) => setTimeLimit(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white placeholder-slate-500 transition-all duration-200"
-                          placeholder="e.g., 10"
+                          className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white transition-all duration-200 appearance-none"
                           required
-                          min="1"
-                        />
+                        >
+                          <option value="0.5">0.5 minutes</option>
+                          <option value="1">1 minute</option>
+                          <option value="2">2 minutes</option>
+                          <option value="3">3 minutes</option>
+                          <option value="4">4 minutes</option>
+                          <option value="5">5 minutes</option>
+                        </select>
                         <Clock className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       </div>
                     </div>
@@ -412,6 +503,67 @@ export default function ContentGenerationPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal for viewing past scripts */}
+      {isModalOpen && selectedScript && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-slate-900 rounded-lg border border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+              <div>
+                <h2 className="text-2xl font-bold text-white">{selectedScript.title}</h2>
+                <div className="flex items-center gap-4 text-sm text-slate-400 mt-1">
+                  <span>Topic: {selectedScript.topic}</span>
+                  <span>Time: {selectedScript.timelimit} min</span>
+                  <span>Words: {selectedScript.wordcount}</span>
+                  <span>{new Date(selectedScript.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <Button
+                onClick={closeModal}
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="prose prose-invert max-w-none">
+                {selectedScript.content && selectedScript.content.split('. ').map((section: string, index: number) => {
+                  // Check if this is a section header
+                  const isHeader = section.includes('Introduction') || 
+                                 section.includes('Main Points') || 
+                                 section.includes('Conclusion');
+                  
+                  if (isHeader) {
+                    return (
+                      <div key={index} className="mb-4">
+                        <h4 className="text-lg font-semibold text-purple-400 mb-2 border-b border-purple-500/30 pb-1">
+                          {section.replace(/\./g, '')}
+                        </h4>
+                      </div>
+                    );
+                  } else if (section.trim()) {
+                    return (
+                      <div key={index} className="mb-3">
+                        <p className="text-slate-300 leading-relaxed">
+                          {section.replace(/\./g, '')}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

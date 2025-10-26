@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useState, useEffect, use } from "react"
 
 import {Variants, motion } from "framer-motion"
 import { Spotlight } from "../../_components/ui/spotlight"
@@ -20,8 +21,47 @@ import {
   Lightbulb,
   TrendingUp,
   Zap,
+  Loader2,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { api } from "@/lib/axios-util"
+
+// --- API Response Interface ---
+interface RecordingData {
+  _id: string;
+  userId: string;
+  filePath: string;
+  results: {
+    acoustic_metrics: {
+      avg_volume_status: string;
+      pitch_monotony_score: number;
+    };
+    clarity_score: number;
+    overall_wpm: number;
+    filler_count: number;
+    strategic_pauses: number;
+    hesitation_gaps: number;
+    relevance_score: string | null;
+    suggested_content: string[];
+    vague_phrases_found: string[];
+    feedback: string[];
+    _id: string;
+  };
+  metadata: {
+    filename: string;
+    duration: number;
+    file_size: number;
+    format: string;
+    _id: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  recording: RecordingData;
+}
 
 // --- Animation Variants ---
 const containerVariants : Variants= {
@@ -160,38 +200,113 @@ const InsightItem = ({ insight, index }: { insight: any; index: number }) => {
 }
 
 // Main Page Component
-export default function ResultPage({ params }: { params: { id: string } }) {
+export default function ResultPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const [recordingData, setRecordingData] = useState<RecordingData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Unwrap the params promise
+  const resolvedParams = use(params)
 
+  // Fetch recording data from API
+  useEffect(() => {
+    const fetchRecordingData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await api.get(`/recording/get/${resolvedParams.id}`)
+        const data: ApiResponse = response.data
+        
+        if (data.success && data.recording) {
+          setRecordingData(data.recording)
+        } else {
+          setError('Failed to fetch recording data')
+        }
+      } catch (err: any) {
+        console.error('Error fetching recording data:', err)
+        setError(err.response?.data?.message || 'Failed to load recording data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchRecordingData()
+  }, [resolvedParams.id])
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-foreground flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center space-y-4"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1.5,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+          >
+            <Loader2 className="w-12 h-12 text-purple-400" />
+          </motion.div>
+          <h2 className="text-xl font-semibold text-white">Loading Analysis Results...</h2>
+          <p className="text-slate-400">Please wait while we fetch your data</p>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !recordingData) {
+    return (
+      <div className="min-h-screen bg-black text-foreground flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4"
+        >
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
+          <h2 className="text-2xl font-semibold text-white">Error Loading Results</h2>
+          <p className="text-slate-400">{String(error) || 'No data available'}</p>
+          <Button
+            onClick={() => router.back()}
+            className="mt-4"
+          >
+            Go Back
+          </Button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Transform API data to match component expectations
   const analysisResult = {
-    id: params.id,
-    topic: "Marketing Strategy 2024",
-    date: "2024-02-20T10:30:00",
-    clarityScore: 91,
-    wpm: 144.1,
-    fillerCount: 3,
-    strategicPauses: 8,
-    hesitationGaps: 2,
-    relevanceScore: "High",
-    volumeStatus: "Consistent",
-    pitchMonotonyScore: 75,
-    insights: [
-      {
-        id: 1,
-        text: "Excellent pacing, right in the ideal 140-160 WPM range.",
-        type: "positive",
-      },
-      {
-        id: 2,
-        text: "Very few filler words ('um', 'ah') detected. Great job!",
-        type: "positive",
-      },
-      {
-        id: 3,
-        text: "Try to add more variation in pitch to keep listeners engaged.",
-        type: "suggestion",
-      },
-    ],
+    id: String(recordingData._id),
+    topic: String(recordingData.metadata.filename),
+    date: String(recordingData.createdAt),
+    clarityScore: Number(recordingData.results.clarity_score) || 0,
+    wpm: Number(recordingData.results.overall_wpm) || 0,
+    fillerCount: Number(recordingData.results.filler_count) || 0,
+    strategicPauses: Number(recordingData.results.strategic_pauses) || 0,
+    hesitationGaps: Number(recordingData.results.hesitation_gaps) || 0,
+    relevanceScore: String(recordingData.results.relevance_score || "N/A"),
+    volumeStatus: String(recordingData.results.acoustic_metrics.avg_volume_status),
+    pitchMonotonyScore: Number(recordingData.results.acoustic_metrics.pitch_monotony_score) || 0,
+    insights: (recordingData.results.feedback || []).slice(0, 2).map((feedback, index) => ({
+      id: index + 1,
+      text: String(feedback),
+      type: String(feedback).includes('⚠️') ? "suggestion" : "positive",
+    })),
+    suggestedContent: (recordingData.results.suggested_content || []).map((content, index) => ({
+      id: index + 1,
+      text: String(content),
+      type: "suggestion",
+    })),
   }
 
   const { clarityScore, pitchMonotonyScore } = analysisResult
@@ -300,6 +415,30 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                   {analysisResult.insights.map((insight, idx) => (
                     <InsightItem key={insight.id} insight={insight} index={idx} />
                   ))}
+                </div>
+              </section>
+
+              {/* --- Suggested Content Card --- */}
+              <section>
+                <motion.h2
+                  className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Lightbulb className="w-5 h-5 text-purple-400" />
+                  Suggested Content
+                </motion.h2>
+                <div className="space-y-3">
+                  {analysisResult.suggestedContent.length > 0 ? (
+                    analysisResult.suggestedContent.map((content, idx) => (
+                      <InsightItem key={content.id} insight={content} index={idx} />
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-lg border border-slate-700/50 bg-slate-900/30 text-center">
+                      <p className="text-slate-400 text-sm">No content suggestions available</p>
+                    </div>
+                  )}
                 </div>
               </section>
             </motion.div>

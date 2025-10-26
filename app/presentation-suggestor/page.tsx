@@ -22,6 +22,7 @@ import {
   Check, // New Icon
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import UnifiedSidebar from "../_components/layout/unified-sidebar";
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -119,73 +120,6 @@ const MOCK_SLIDES = [
   },
 ];
 
-// --- Dashboard Sidebar (Active link changed to Presentation Generator) ---
-const DashboardSidebar = () => (
-  <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 p-6 hidden md:block flex-shrink-0">
-    <motion.div
-      className="flex items-center gap-2 mb-8"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div
-        className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-        variants={floatingVariants}
-        animate="animate"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </motion.div>
-      <h2 className="text-lg font-bold text-white">Analyze</h2>
-    </motion.div>
-
-    <nav className="space-y-2">
-      <motion.a
-        href="#" // Should link to your dashboard page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-sm font-medium">Dashboard</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to your analysis page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileAudio className="w-5 h-5" />
-        <span className="text-sm">Analysis</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to your history page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <Archive className="w-5 h-5" />
-        <span className="text-sm font-medium">History</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to content gen page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileText className="w-5 h-5" />
-        <span className="text-sm font-medium">Content Generation</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to this page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 font-medium transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <Presentation className="w-5 h-5" />
-        <span className="text-sm font-medium">Presentation Generator</span>
-      </motion.a>
-    </nav>
-  </aside>
-);
 
 // --- Header ---
 const Header = () => (
@@ -273,9 +207,9 @@ ${slide.visualSuggestion}
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
-      <DashboardSidebar />
+      <UnifiedSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-72">
         <Header />
 
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden">

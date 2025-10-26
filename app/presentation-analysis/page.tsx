@@ -18,6 +18,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/axios-util";
+import UnifiedSidebar from "../_components/layout/unified-sidebar";
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -67,55 +69,6 @@ const pulseVariants = {
   },
 };
 
-// --- Dashboard Sidebar ---
-const DashboardSidebar = () => (
-  <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 p-6 hidden md:block flex-shrink-0">
-    <motion.div
-      className="flex items-center gap-2 mb-8"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div
-        className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-        variants={floatingVariants}
-        animate="animate"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </motion.div>
-      <h2 className="text-lg font-bold text-white">Analyze</h2>
-    </motion.div>
-
-    <nav className="space-y-2">
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-sm font-medium">Dashboard</span>
-      </motion.a>
-
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 font-medium transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileAudio className="w-5 h-5" />
-        <span className="text-sm">Analysis</span>
-      </motion.a>
-
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FolderClock className="w-5 h-5" />
-        <span className="text-sm font-medium">History</span>
-      </motion.a>
-    </nav>
-  </aside>
-);
 
 // --- Header ---
 const Header = () => (
@@ -164,18 +117,34 @@ export default function PresentationAnalysisPage() {
     if (fileInput) fileInput.value = "";
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedFile) return;
 
     setIsLoading(true);
     setAnalysisResultId(null); // Clear any existing result ID
 
-    // Simulate analysis delay
-    setTimeout(() => {
-      const newId = `result-${Date.now()}`; // Simulate a unique ID from backend
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('audio', selectedFile);
+      formData.append('topic', topic);
+
+      // Make API call using axios utility
+      const response = await api.post('/recording/create', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 0, // Remove timeout for this request
+      });
+
+      const result = response.data;
+      console.log(result);
+      // Assuming the API returns an ID or some identifier
+      const newId = result.recording._id || result.recordingId || `result-${Date.now()}`;
+      
       setIsLoading(false);
-      setAnalysisResultId(newId); // Set the new result ID
+      setAnalysisResultId(newId);
 
       // Clear the form for the next upload
       setSelectedFile(null);
@@ -185,16 +154,19 @@ export default function PresentationAnalysisPage() {
       ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
 
-      // We no longer navigate here.
-      // router.push(`/result/new-result-id`);
-    }, 3000);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setIsLoading(false);
+      // You might want to show an error message to the user here
+      alert('Failed to upload file. Please try again.');
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
-      <DashboardSidebar />
+      <UnifiedSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-72">
         <Header />
 
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden">

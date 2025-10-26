@@ -16,6 +16,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/axios-util";
+import UnifiedSidebar from "../_components/layout/unified-sidebar";
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -52,80 +54,30 @@ const floatingVariants: Variants = {
   },
 };
 
-// --- Mock Data ---
-// In a real app, you'd fetch this from your backend
-const MOCK_HISTORY = [
-  {
-    id: "res_1a2b3c4d",
-    topic: "Q4 Marketing Strategy Review",
-    date: "2025-10-24T14:30:00",
-  },
-  {
-    id: "res_5e6f7g8h",
-    topic: "Product Launch Pitch - Project Phoenix",
-    date: "2025-10-22T11:20:00",
-  },
-  {
-    id: "res_9i0j1k2l",
-    topic: "Engineering All-Hands Sync",
-    date: "2025-10-21T09:00:00",
-  },
-  {
-    id: "res_3m4n5o6p",
-    topic: "Initial Seed Round Funding Pitch",
-    date: "2025-10-19T16:15:00",
-  },
-];
+// --- API Response Interfaces ---
+interface RecordingMetadata {
+  filename: string;
+  duration: number;
+  file_size: number;
+  format: string;
+  _id: string;
+}
 
-// --- Dashboard Sidebar (Active link changed to History) ---
-const DashboardSidebar = () => (
-  <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 p-6 hidden md:block flex-shrink-0">
-    <motion.div
-      className="flex items-center gap-2 mb-8"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div
-        className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-        variants={floatingVariants}
-        animate="animate"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </motion.div>
-      <h2 className="text-lg font-bold text-white">Archive</h2>
-    </motion.div>
+interface RecordingData {
+  _id: string;
+  userId: string;
+  filePath: string;
+  results: any; // We don't need the full results for the history page
+  metadata: RecordingMetadata;
+  createdAt: string;
+  updatedAt: string;
+}
 
-    <nav className="space-y-2">
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-sm font-medium">Dashboard</span>
-      </motion.a>
+interface ApiResponse {
+  success: boolean;
+  recordings: RecordingData[];
+}
 
-      <motion.a
-        href="#" // Should link to your analysis page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileAudio className="w-5 h-5" />
-        <span className="text-sm">Analysis</span>
-      </motion.a>
-
-      <motion.a
-        href="#" // Should link to your history page
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 font-medium transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FolderClock className="w-5 h-5" />
-        <span className="text-sm font-medium">History</span>
-      </motion.a>
-    </nav>
-  </aside>
-);
 
 // --- Header ---
 const Header = () => (
@@ -151,18 +103,34 @@ const Header = () => (
 // --- Page Component ---
 export default function HistoryPage() {
   const router = useRouter();
-  const [history, setHistory] = useState<typeof MOCK_HISTORY>([]);
+  const [recordings, setRecordings] = useState<RecordingData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulate fetching data from the backend
+  // Fetch recordings from API
   useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setHistory(MOCK_HISTORY);
-      // To test the empty state, uncomment the next line:
-      // setHistory([]);
-      setIsLoading(false);
-    }, 1000); // 1-second delay
+    const fetchRecordings = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await api.get('/recording/get');
+        const data: ApiResponse = response.data;
+        
+        if (data.success && data.recordings) {
+          setRecordings(data.recordings);
+        } else {
+          setError('Failed to fetch recordings');
+        }
+      } catch (err: any) {
+        console.error('Error fetching recordings:', err);
+        setError(err.response?.data?.message || 'Failed to load recordings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecordings();
   }, []);
 
   const renderContent = () => {
@@ -174,7 +142,31 @@ export default function HistoryPage() {
       );
     }
 
-    if (history.length === 0) {
+    if (error) {
+      return (
+        <Card className="p-12 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-red-500/30 rounded-xl text-center">
+          <div className="flex flex-col items-center">
+            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mb-4">
+              <Info className="w-7 h-7 text-red-400" />
+            </div>
+            <h3 className="font-semibold text-lg text-white mb-2">
+              Error Loading Recordings
+            </h3>
+            <p className="text-slate-400 mb-4">
+              {error}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Try Again
+            </Button>
+          </div>
+        </Card>
+      );
+    }
+
+    if (recordings.length === 0) {
       return (
         <Card className="p-12 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-dashed border-slate-700 rounded-xl text-center">
           <div className="flex flex-col items-center">
@@ -200,9 +192,9 @@ export default function HistoryPage() {
         initial="hidden"
         animate="visible"
       >
-        {history.map((recording, index) => (
+        {recordings.map((recording, index) => (
           <motion.div
-            key={recording.id}
+            key={recording._id}
             variants={itemVariants}
             transition={{ delay: index * 0.1 }}
             whileHover={{ scale: 1.02 }}
@@ -215,20 +207,24 @@ export default function HistoryPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">
-                      {recording.topic}
+                      {recording.metadata.filename}
                     </h3>
                     <div className="flex items-center gap-1.5 text-sm text-slate-400 mt-1">
                       <Clock className="w-4 h-4" />
-                      {new Date(recording.date).toLocaleDateString("en-US", {
+                      {new Date(recording.createdAt).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
                       })}
                     </div>
+                    <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
+                      <span>Size: {(recording.metadata.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                      <span>Format: {recording.metadata.format.toUpperCase()}</span>
+                    </div>
                   </div>
                 </div>
                 <Button
-                  onClick={() => router.push(`/result/${recording.id}`)}
+                  onClick={() => router.push(`/result/${recording._id}`)}
                   className="bg-slate-800 hover:bg-slate-700 text-purple-400 hover:text-purple-300 gap-2 w-full sm:w-auto"
                   size="sm"
                 >
@@ -245,9 +241,9 @@ export default function HistoryPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
-      <DashboardSidebar />
+      <UnifiedSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-72">
         <Header />
 
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden">

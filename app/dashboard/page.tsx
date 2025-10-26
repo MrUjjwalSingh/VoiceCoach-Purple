@@ -22,61 +22,10 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getUserEmail } from "@/lib/auth-utils"
+import UnifiedSidebar from "../_components/layout/unified-sidebar"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true)
-  const [username, setUsername] = useState("Profile")
-
-  useEffect(() => {
-    try {
-      const email = getUserEmail()
-      if (email) {
-        setUsername(email)
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, [])
-
-  const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: Home, active: true },
-    {
-      label: "Presentation Analysis",
-      href: "/presentation-analysis",
-      icon: FileText,
-      active: false,
-    },
-    {
-      label: "Content Generator",
-      href: "/content-generator",
-      icon: BarChart2,
-      active: false,
-    },
-    {
-      label: "Presentation Suggestor",
-      href: "/presentation-suggestor",
-      icon: PieChart,
-      active: false,
-    },
-    { label: "History", href: "/history", icon: Clock, active: false },
-    {
-      label: "Words Per Minute",
-      href: "/wpm",
-      icon: Activity,
-      active: false,
-    },
-  ]
-
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem("auth_token")
-      localStorage.removeItem("user_email")
-    } catch (e) {
-      // ignore
-    }
-    router.push("/auth/login")
-  }
 
   // sample WPM analytics data (replace with real data fetching)
   const wpm = 148
@@ -99,94 +48,11 @@ export default function DashboardPage() {
           fill="rgba(168, 123, 250, 0.10)"
         />
 
-        {/* --- Sidebar (Fixed) --- */}
-         <aside
-           className={`${
-             isSidebarExpanded ? "w-72" : "w-20"
-           } bg-card/90 backdrop-blur-md border-r border-primary/10 p-6 flex flex-col transition-all duration-300
-           h-screen fixed top-0 left-0 z-40`} // <-- UPDATED: Now fixed
-         >
-          {/* --- Toggle button (Enhanced UI) --- */}
-          <button
-            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-            // UPDATED: Enhanced button UI
-            className="absolute -right-4 top-16 w-8 h-8 bg-card border border-primary/30 rounded-full flex items-center justify-center text-[#111827] dark:text-foreground hover:bg-primary/10 hover:text-primary transition-colors z-50"
-            aria-label={
-              isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
-            }
-          >
-            {isSidebarExpanded ? (
-              <ChevronLeft size={16} />
-            ) : (
-              <ChevronRight size={16} />
-            )}
-          </button>
+        {/* --- Unified Sidebar --- */}
+        <UnifiedSidebar />
 
-          <div
-            className={`flex items-center gap-3 mb-8 ${
-              !isSidebarExpanded && "justify-center"
-            }`}
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white flex-shrink-0">
-              <User size={18} />
-            </div>
-            {isSidebarExpanded && (
-              <div>
-                <div className="text-sm text-slate-300">Signed in as</div>
-                <div className="font-semibold text-slate-100 text-xs break-all">
-                  {username}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <nav className="flex-1 overflow-y-auto">
-            <ul className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md transition ${
-                        !isSidebarExpanded && "justify-center"
-                      } ${
-                        item.active
-                          ? "bg-primary/20 text-white font-medium"
-                          : "text-slate-300 hover:bg-primary/10 hover:text-white"
-                      }`}
-                      title={!isSidebarExpanded ? item.label : undefined}
-                    >
-                      <Icon size={16} />
-                      {isSidebarExpanded && <span>{item.label}</span>}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-
-          <div className="mt-auto">
-            <button
-              onClick={handleLogout}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-300 hover:bg-red-600/20 hover:text-red-400 transition ${
-                !isSidebarExpanded && "justify-center"
-              }`}
-              title={!isSidebarExpanded ? "Logout" : undefined}
-            >
-              <LogOut size={16} />
-              {isSidebarExpanded && <span>Logout</span>}
-            </button>
-          </div>
-        </aside>
-
-        {/* --- Main Content Area (With dynamic padding) --- */}
-           <div
-             // UPDATED: This wrapper handles padding for the fixed sidebar
-             className={`relative flex flex-col min-h-screen transition-all duration-300 ${
-               isSidebarExpanded ? "pl-72" : "pl-20"
-             }`}
-           >
+        {/* --- Main Content Area --- */}
+           <div className="relative flex flex-col min-h-screen pl-72">
              {/* Original background overlay (now inside the wrapper) */}
              <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-primary/20 -z-10" />
 
