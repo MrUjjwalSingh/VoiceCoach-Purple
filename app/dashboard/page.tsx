@@ -19,16 +19,99 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getUserEmail } from "@/lib/auth-utils"
 import UnifiedSidebar from "../_components/layout/unified-sidebar"
+import { api } from "@/lib/axios-util"
+
+// API Response Interface
+interface DashboardData {
+  averages: {
+    clarity_score: number;
+    overall_wpm: number;
+    filler_count: number;
+    strategic_pauses: number;
+    hesitation_gaps: number;
+    relevance_score: number;
+    acoustic_metrics: {
+      pitch_monotony_score: number;
+    };
+  } | null;
+  totalRecordings: number;
+  analyzedRecordings: number;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    averages: {
+      clarity_score: number;
+      overall_wpm: number;
+      filler_count: number;
+      strategic_pauses: number;
+      hesitation_gaps: number;
+      relevance_score: number;
+      acoustic_metrics: {
+        pitch_monotony_score: number;
+      };
+    } | null;
+    totalRecordings: number;
+    analyzedRecordings: number;
+  };
+}
 
 export default function DashboardPage() {
   const router = useRouter()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // sample WPM analytics data (replace with real data fetching)
-  const wpm = 148
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await api.get('/dashboard')
+        const data = response.data
+        
+        console.log('Dashboard API response:', data)
+        
+        if (data.success && data.data) {
+          // Transform the API response to match our DashboardData interface
+          const transformedData: DashboardData = {
+            averages: data.data.averages,
+            totalRecordings: data.data.totalRecordings,
+            analyzedRecordings: data.data.analyzedRecordings
+          }
+          console.log('Transformed dashboard data:', transformedData)
+          setDashboardData(transformedData)
+        } else {
+          setError(data.message || 'Failed to fetch dashboard data')
+        }
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err)
+        console.error('Error details:', {
+          message: err.message,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        })
+        setError(err.response?.data?.message || err.message || 'Failed to load dashboard data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  // Calculate derived values
+  const wpm = dashboardData?.averages?.overall_wpm || 0
   const pacingStatus =
     wpm > 160 ? "Very fast" : wpm < 100 ? "Very slow" : "Within range"
   const strategicPauses =
@@ -37,6 +120,108 @@ export default function DashboardPage() {
     `✅ Pacing: Your overall speed (${wpm} WPM) is within range.`,
     "🛑 Monotony Alert: Your delivery is flat (Score 86.0/100). Vary your tone and pitch.",
   ]
+
+  // Check if no recordings exist
+  const hasNoRecordings = dashboardData?.totalRecordings === 0
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-black text-foreground flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center space-y-4"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 1.5,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "linear",
+              }}
+            >
+              <Loader2 className="w-12 h-12 text-purple-400" />
+            </motion.div>
+            <h2 className="text-xl font-semibold text-white">Loading Dashboard...</h2>
+            <p className="text-slate-400">Please wait while we fetch your data</p>
+          </motion.div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
+
+  // Error state
+  if (error || !dashboardData) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-black text-foreground flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-4"
+          >
+            <h2 className="text-2xl font-semibold text-white">Error Loading Dashboard</h2>
+            <p className="text-slate-400">{error || 'No data available'}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              Retry
+            </button>
+          </motion.div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
+
+  // No recordings state
+  if (hasNoRecordings) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-black relative overflow-hidden">
+          <Spotlight className="top-12 left-8" fill="rgba(139, 92, 246, 0.12)" />
+          <Spotlight className="top-40 right-16" fill="rgba(168, 123, 250, 0.10)" />
+          
+          <UnifiedSidebar />
+          
+          <div className="relative flex flex-col min-h-screen pl-72">
+            <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-primary/20 -z-10" />
+            <Navbar />
+            
+            <main className="flex-1 p-8 flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center space-y-6 max-w-2xl"
+              >
+                <div className="w-24 h-24 mx-auto bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center">
+                  <Activity className="w-12 h-12 text-purple-400" />
+                </div>
+                <h1 className="text-4xl font-bold text-white">No Recordings Yet</h1>
+                <p className="text-lg text-slate-400">
+                  Upload your first recording to start analyzing your presentation skills and see detailed insights.
+                </p>
+                <div className="space-y-4">
+                  <Link
+                    href="/presentation-analysis"
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-purple-500/50"
+                  >
+                    <Activity className="w-5 h-5 mr-2" />
+                    Upload Recording
+                  </Link>
+                  <p className="text-sm text-slate-500">
+                    Your analytics will appear here once you upload recordings
+                  </p>
+                </div>
+              </motion.div>
+            </main>
+          </div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
 
   return (
     <ProtectedRoute>
@@ -107,42 +292,46 @@ export default function DashboardPage() {
                   </div>
                 </Card>
 
-                {/* Bars */}
+                {/* Recording Statistics */}
                  <Card className="p-6 bg-purple-500/10 backdrop-blur-sm border-purple-400/20">
                   <div className="flex items-start justify-between mb-4">
                     <h3 className="text-sm font-medium text-slate-200">
-                      Presentations Analysis
+                      Recording Statistics
                     </h3>
                     <span className="text-xs text-slate-400">
-                      Completed vs Practiced
+                      Total vs Analyzed
                     </span>
                   </div>
                   <div className="h-44 flex items-end gap-6 px-2">
                     <div className="flex-1 flex flex-col items-center">
                       <div
                         className="w-12 bg-primary rounded-t-md"
-                        style={{ height: "52%" }}
+                        style={{ height: dashboardData.totalRecordings > 0 ? "100%" : "10%" }}
                       />
                       <div className="text-xs text-slate-400 mt-2">
-                        Completed
+                        Total: {dashboardData.totalRecordings}
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center">
                       <div
                         className="w-12 bg-secondary rounded-t-md"
-                        style={{ height: "78%" }}
+                        style={{ height: dashboardData.analyzedRecordings > 0 ? "100%" : "10%" }}
                       />
                       <div className="text-xs text-slate-400 mt-2">
-                        Practiced
+                        Analyzed: {dashboardData.analyzedRecordings}
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center">
                       <div
-                        className="w-12 bg-slate-400 rounded-t-md"
-                        style={{ height: "30%" }}
+                        className="w-12 bg-green-500 rounded-t-md"
+                        style={{ 
+                          height: dashboardData.totalRecordings > 0 
+                            ? `${(dashboardData.analyzedRecordings / dashboardData.totalRecordings) * 100}%` 
+                            : "10%"
+                        }}
                       />
                       <div className="text-xs text-slate-400 mt-2">
-                        Sessions
+                        Success Rate
                       </div>
                     </div>
                   </div>
@@ -158,63 +347,30 @@ export default function DashboardPage() {
                       By frequency
                     </span>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <svg viewBox="0 0 36 36" className="w-28 h-28">
-                      <circle
-                        r="16"
-                        cx="18"
-                        cy="18"
-                        fill="transparent"
-                        stroke="#ECEBFF"
-                        strokeWidth="8"
-                      />
-                      <circle
-                        r="16"
-                        cx="18"
-                        cy="18"
-                        fill="transparent"
-                        stroke="#8B5CF6"
-                        strokeWidth="8"
-                        strokeDasharray="60 40"
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)"
-                      />
-                      <circle
-                        r="16"
-                        cx="18"
-                        cy="18"
-                        fill="transparent"
-                        stroke="#60A5FA"
-                        strokeWidth="8"
-                        strokeDasharray="24 76"
-                        strokeLinecap="round"
-                        transform="rotate(20 18 18)"
-                      />
-                    </svg>
-                    <div className="flex-1">
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-3">
-                          <span className="w-3 h-3 rounded-full bg-primary inline-block" />
-                          <span className="text-slate-200">Strategy</span>
-                          <span className="text-slate-400 ml-auto">
-                            42%
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <span className="w-3 h-3 rounded-full bg-secondary inline-block" />
-                          <span className="text-slate-200">Growth</span>
-                          <span className="text-slate-400 ml-auto">
-                            28%
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <span className="w-3 h-3 rounded-full bg-slate-400 inline-block" />
-                          <span className="text-slate-200">Innovation</span>
-                          <span className="text-slate-400 ml-auto">
-                            30%
-                          </span>
-                        </li>
-                      </ul>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-300">Clarity Score</span>
+                      <span className="text-lg font-bold text-purple-400">
+                        {dashboardData.averages ? Math.round(dashboardData.averages.clarity_score) : 0}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-300">WPM Average</span>
+                      <span className="text-lg font-bold text-blue-400">
+                        {dashboardData.averages ? Math.round(dashboardData.averages.overall_wpm) : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-300">Strategic Pauses</span>
+                      <span className="text-lg font-bold text-green-400">
+                        {dashboardData.averages ? Math.round(dashboardData.averages.strategic_pauses) : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-300">Pitch Variety</span>
+                      <span className="text-lg font-bold text-yellow-400">
+                        {dashboardData.averages ? Math.round(dashboardData.averages.acoustic_metrics.pitch_monotony_score) : 0}%
+                      </span>
                     </div>
                   </div>
                 </Card>

@@ -22,8 +22,14 @@ import {
   TrendingUp,
   Zap,
   Loader2,
+  BarChartHorizontal, // New icon for the chart
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+// --- Import the new components ---
+// Adjust paths as needed
+
+import { PacingChart } from "@/components/PacingChart"
 import { api } from "@/lib/axios-util"
 
 // --- API Response Interface ---
@@ -64,7 +70,7 @@ interface ApiResponse {
 }
 
 // --- Animation Variants ---
-const containerVariants : Variants= {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -75,7 +81,7 @@ const containerVariants : Variants= {
   },
 }
 
-const itemVariants : Variants= {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -84,7 +90,7 @@ const itemVariants : Variants= {
   },
 }
 
-const floatingVariants : Variants= {
+const floatingVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -132,7 +138,13 @@ interface MetricCardProps {
   variant?: MetricVariant
 }
 
-const MetricCard = ({ icon: Icon, label, value, subValue, variant = "primary" }: MetricCardProps) => {
+const MetricCard = ({
+  icon: Icon,
+  label,
+  value,
+  subValue,
+  variant = "primary",
+}: MetricCardProps) => {
   const variantClasses = {
     primary: "text-purple-400 bg-purple-500/10",
     success: "text-green-400 bg-green-500/10",
@@ -145,13 +157,22 @@ const MetricCard = ({ icon: Icon, label, value, subValue, variant = "primary" }:
     <motion.div variants={floatingVariants} whileHover="hover" className="group">
       <Card className="p-5 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 transition-all duration-300 shadow-lg hover:shadow-purple-500/10">
         <div className="flex items-center space-x-4">
-          <motion.div className={`p-3 rounded-lg ${classes} transition-all duration-300`} whileHover={{ scale: 1.1 }}>
+          <motion.div
+            className={`p-3 rounded-lg ${classes} transition-all duration-300`}
+            whileHover={{ scale: 1.1 }}
+          >
             <Icon className="w-5 h-5" />
           </motion.div>
           <div>
-            <div className="text-sm text-muted-foreground font-medium">{label}</div>
+            <div className="text-sm text-muted-foreground font-medium">
+              {label}
+            </div>
             <div className="text-2xl font-bold text-foreground">{value}</div>
-            {subValue && <div className="text-xs text-muted-foreground mt-0.5">{subValue}</div>}
+            {subValue && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {subValue}
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -159,8 +180,36 @@ const MetricCard = ({ icon: Icon, label, value, subValue, variant = "primary" }:
   )
 }
 
-const InsightItem = ({ insight, index }: { insight: any; index: number }) => {
-  const isPositive = insight.type === "positive"
+// Updated InsightItem to parse new feedback format
+const InsightItem = ({
+  feedbackText,
+  index,
+}: {
+  feedbackText: string
+  index: number
+}) => {
+  let type: "positive" | "suggestion" | "content" = "suggestion"
+  let text = feedbackText
+
+  if (text.startsWith("✅") || text.startsWith("⭐")) {
+    type = "positive"
+  } else if (text.startsWith("🛑")) {
+    type = "suggestion"
+  } else if (text.startsWith("🧠") || text.startsWith("📚") || text.trim().startsWith("-")) {
+    type = "content"
+    // Clean up content suggestions
+    text = text.replace(/(\n?🧠|\n?📚|   - )/g, "").trim()
+  }
+
+  // Clean up emojis/prefixes
+  text = text
+    .replace(
+      /^(✅|⭐|🛑|🧠|📚|   - ) /g,
+      "",
+    )
+    .trim()
+
+  const isPositive = type === "positive"
 
   return (
     <motion.div
@@ -174,23 +223,37 @@ const InsightItem = ({ insight, index }: { insight: any; index: number }) => {
           isPositive
             ? "bg-green-500/5 border-green-500/20 hover:border-green-500/40 hover:bg-green-500/10"
             : "bg-yellow-500/5 border-yellow-500/20 hover:border-yellow-500/40 hover:bg-yellow-500/10"
-        }`}
+        } ${type === "content" && "bg-cyan-500/5 border-cyan-500/20 hover:border-cyan-500/40 hover:bg-cyan-500/10"}`}
       >
         <div className="flex items-start gap-3">
           <motion.div
-            className={`p-2 rounded-full mt-0.5 flex-shrink-0 ${isPositive ? "bg-green-500/20" : "bg-yellow-500/20"}`}
+            className={`p-2 rounded-full mt-0.5 flex-shrink-0 ${
+              isPositive
+                ? "bg-green-500/20"
+                : type === "content"
+                  ? "bg-cyan-500/20"
+                  : "bg-yellow-500/20"
+            }`}
             whileHover={{ scale: 1.1, rotate: 5 }}
           >
             {isPositive ? (
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <CheckCircle2
+                className={`w-4 h-4 ${isPositive ? "text-green-400" : "text-yellow-400"}`}
+              />
             ) : (
-              <Lightbulb className="w-4 h-4 text-yellow-400" />
+              <Lightbulb
+                className={`w-4 h-4 ${type === "content" ? "text-cyan-400" : "text-yellow-400"}`}
+              />
             )}
           </motion.div>
           <div className="flex-1">
-            <p className="text-sm text-foreground leading-relaxed">{insight.text}</p>
+            <p className="text-sm text-foreground leading-relaxed">{text}</p>
             <p className="text-xs text-muted-foreground mt-1.5">
-              {isPositive ? "✓ Keep it up!" : "💡 Tip for improvement"}
+              {isPositive
+                ? "✓ Keep it up!"
+                : type === "content"
+                  ? "💡 Content Suggestion"
+                  : "💡 Tip for improvement"}
             </p>
           </div>
         </div>
@@ -286,27 +349,21 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
 
   // Transform API data to match component expectations
   const analysisResult = {
-    id: String(recordingData._id),
-    topic: String(recordingData.metadata.filename),
-    date: String(recordingData.createdAt),
-    clarityScore: Number(recordingData.results.clarity_score) || 0,
-    wpm: Number(recordingData.results.overall_wpm) || 0,
-    fillerCount: Number(recordingData.results.filler_count) || 0,
-    strategicPauses: Number(recordingData.results.strategic_pauses) || 0,
-    hesitationGaps: Number(recordingData.results.hesitation_gaps) || 0,
-    relevanceScore: String(recordingData.results.relevance_score || "N/A"),
-    volumeStatus: String(recordingData.results.acoustic_metrics.avg_volume_status),
-    pitchMonotonyScore: Number(recordingData.results.acoustic_metrics.pitch_monotony_score) || 0,
-    insights: (recordingData.results.feedback || []).slice(0, 2).map((feedback, index) => ({
-      id: index + 1,
-      text: String(feedback),
-      type: String(feedback).includes('⚠️') ? "suggestion" : "positive",
-    })),
-    suggestedContent: (recordingData.results.suggested_content || []).map((content, index) => ({
-      id: index + 1,
-      text: String(content),
-      type: "suggestion",
-    })),
+    id: resolvedParams.id,
+    topic: recordingData.metadata.filename || "Presentation", // Use filename as topic
+    date: recordingData.createdAt,
+    cloudinaryAudioUrl: recordingData.filePath,
+    clarityScore: recordingData.results.clarity_score,
+    wpm: recordingData.results.overall_wpm,
+    fillerCount: recordingData.results.filler_count,
+    strategicPauses: recordingData.results.strategic_pauses,
+    hesitationGaps: recordingData.results.hesitation_gaps,
+    relevanceScore: `${recordingData.results.relevance_score || 0}/10`,
+    volumeStatus: recordingData.results.acoustic_metrics.avg_volume_status,
+    pitchMonotonyScore: recordingData.results.acoustic_metrics.pitch_monotony_score,
+    feedback: recordingData.results.feedback.slice(0, 2), // Only first 2 feedback items
+    suggestedContent: recordingData.results.suggested_content || [],
+    transcript: "Sample transcript", // Add placeholder since transcript is not in API response
   }
 
   const { clarityScore, pitchMonotonyScore } = analysisResult
@@ -323,7 +380,11 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       <Spotlight className="bottom-40 right-0" fill="rgba(147, 51, 234, 0.1)" />
 
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {/* --- Header --- */}
           <motion.div variants={itemVariants} className="mb-12">
             <motion.div whileHover={{ x: -4 }} transition={{ duration: 0.2 }}>
@@ -362,7 +423,36 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
           {/* --- Main Dashboard Grid --- */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* --- Left Column (Summary & Insights) --- */}
-            <motion.div variants={itemVariants} className="lg:col-span-1 space-y-8">
+            <motion.div
+              variants={itemVariants}
+              className="lg:col-span-1 space-y-8"
+            >
+              {/* --- UPDATED AUDIO PLAYER SECTION --- */}
+              <section>
+                <motion.h2
+                  className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Waves className="w-5 h-5 text-purple-400" />
+                  Audio Playback
+                </motion.h2>
+                <motion.div variants={floatingVariants} whileHover="hover">
+                  <Card className="p-4 bg-gradient-to-br from-slate-900/60 to-slate-800/40 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 shadow-xl hover:shadow-purple-500/15 transition-all duration-300">
+                    {/* Simple native audio player (removed WaveformPlayer dependency) */}
+                    <audio
+                      controls
+                      src={analysisResult.cloudinaryAudioUrl}
+                      className="w-full rounded-md bg-black/40"
+                    >
+                      Your browser does not support the audio element.
+                    </audio>
+                  </Card>
+                </motion.div>
+              </section>
+              {/* --- END AUDIO PLAYER SECTION --- */}
+
               {/* --- Summary Card --- */}
               <section>
                 <motion.h2
@@ -377,7 +467,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                 <motion.div variants={floatingVariants} whileHover="hover">
                   <Card className="p-6 bg-gradient-to-br from-slate-900/60 to-slate-800/40 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 shadow-xl hover:shadow-purple-500/15 transition-all duration-300 space-y-6">
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-medium text-foreground">Clarity Score</span>
+                      <span className="text-lg font-medium text-foreground">
+                        Clarity Score
+                      </span>
                       <motion.span
                         className="text-4xl font-bold text-purple-400"
                         initial={{ scale: 0.8, opacity: 0 }}
@@ -385,7 +477,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                         transition={{ delay: 0.5, duration: 0.6 }}
                       >
                         {analysisResult.clarityScore}
-                        <span className="text-2xl text-muted-foreground">%</span>
+                        <span className="text-2xl text-muted-foreground">
+                          %
+                        </span>
                       </motion.span>
                     </div>
                     <ProgressBar
@@ -394,7 +488,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                       colorClass={getScoreColorClass(clarityScore)}
                     />
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      This score reflects your message's overall clarity, pacing, and confidence.
+                      This score reflects your message's overall clarity,
+                      pacing, and confidence.
                     </p>
                   </Card>
                 </motion.div>
@@ -412,8 +507,12 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                   Key Insights
                 </motion.h2>
                 <div className="space-y-3">
-                  {analysisResult.insights.map((insight, idx) => (
-                    <InsightItem key={insight.id} insight={insight} index={idx} />
+                  {analysisResult.feedback.map((fb, idx) => (
+                    <InsightItem
+                      key={idx}
+                      feedbackText={fb}
+                      index={idx}
+                    />
                   ))}
                 </div>
               </section>
@@ -432,7 +531,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                 <div className="space-y-3">
                   {analysisResult.suggestedContent.length > 0 ? (
                     analysisResult.suggestedContent.map((content, idx) => (
-                      <InsightItem key={content.id} insight={content} index={idx} />
+                      <InsightItem key={idx} feedbackText={content} index={idx} />
                     ))
                   ) : (
                     <div className="p-4 rounded-lg border border-slate-700/50 bg-slate-900/30 text-center">
@@ -443,8 +542,33 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               </section>
             </motion.div>
 
-            {/* --- Right Column (Detailed Metrics) --- */}
-            <motion.div variants={itemVariants} className="lg:col-span-2 space-y-10">
+            {/* --- Right Column (Detailed Metrics & NEW CHART) --- */}
+            <motion.div
+              variants={itemVariants}
+              className="lg:col-span-2 space-y-10"
+            >
+              {/* --- NEW PACING CHART SECTION --- */}
+              <section>
+                <motion.h2
+                  className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <BarChartHorizontal className="w-5 h-5 text-purple-400" />
+                  Pacing Over Time
+                </motion.h2>
+                <motion.div variants={floatingVariants} whileHover="hover">
+                  <Card className="p-6 pt-10 bg-gradient-to-br from-slate-900/60 to-slate-800/40 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 shadow-xl hover:shadow-purple-500/15 transition-all duration-300">
+                    <PacingChart
+                      transcript={[]}
+                      averageWPM={analysisResult.wpm}
+                    />
+                  </Card>
+                </motion.div>
+              </section>
+              {/* --- END PACING CHART SECTION --- */}
+
               {/* --- Core Performance Metrics --- */}
               <section>
                 <motion.h2
@@ -461,7 +585,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     icon={FastForward}
                     label="Words Per Minute"
                     value={analysisResult.wpm}
-                    subValue="Ideal: 140-160"
+                    subValue="Overall Average"
                     variant="primary"
                   />
                   <MetricCard
@@ -469,7 +593,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     label="Filler Count"
                     value={analysisResult.fillerCount}
                     subValue="Lower is better"
-                    variant="success"
+                    variant={
+                      analysisResult.fillerCount === 0 ? "success" : "warning"
+                    }
                   />
                   <MetricCard
                     icon={PauseCircle}
@@ -483,7 +609,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     label="Hesitation Gaps"
                     value={analysisResult.hesitationGaps}
                     subValue="e.g., 'um', 'ah'"
-                    variant="warning"
+                    variant={
+                      analysisResult.hesitationGaps === 0 ? "success" : "warning"
+                    }
                   />
                 </div>
               </section>
@@ -504,7 +632,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     icon={Volume2}
                     label="Volume Status"
                     value={analysisResult.volumeStatus}
-                    subValue="Clarity of audio"
+                    subValue="Audio clarity"
                     variant="info"
                   />
                   <MetricCard
@@ -512,9 +640,17 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     label="Relevance Score"
                     value={analysisResult.relevanceScore}
                     subValue="Topic relevance"
-                    variant="primary"
+                    variant={
+                      Number(recordingData.results.relevance_score || 0) > 5
+                        ? "success"
+                        : "warning"
+                    }
                   />
-                  <motion.div variants={floatingVariants} whileHover="hover" className="md:col-span-2">
+                  <motion.div
+                    variants={floatingVariants}
+                    whileHover="hover"
+                    className="md:col-span-2"
+                  >
                     <Card className="p-5 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-md border border-slate-700/50 hover:border-purple-500/40 transition-all duration-300 shadow-lg hover:shadow-purple-500/10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -524,7 +660,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                           >
                             <Waves className="w-5 h-5" />
                           </motion.div>
-                          <span className="text-lg font-medium text-foreground">Pitch Variety</span>
+                          <span className="text-lg font-medium text-foreground">
+                            Pitch Variety
+                          </span>
                         </div>
                         <motion.div
                           className="text-3xl font-bold text-purple-400"
@@ -533,7 +671,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                           transition={{ delay: 0.6, duration: 0.6 }}
                         >
                           {analysisResult.pitchMonotonyScore}
-                          <span className="text-xl text-muted-foreground">%</span>
+                          <span className="text-xl text-muted-foreground">
+                            %
+                          </span>
                         </motion.div>
                       </div>
                       <ProgressBar
@@ -542,7 +682,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                         colorClass={getScoreColorClass(pitchMonotonyScore)}
                       />
                       <div className="text-xs text-muted-foreground mt-3">
-                        Higher score indicates more varied pitch and engaging delivery.
+                        Higher score indicates more varied pitch and engaging
+                        delivery.
                       </div>
                     </Card>
                   </motion.div>
