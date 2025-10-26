@@ -1,6 +1,6 @@
 "use client";
 
-import { Variants ,motion } from "framer-motion";
+import { Variants, motion } from "framer-motion";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Spotlight } from "../_components/ui/spotlight";
 import { Card } from "@/components/ui/card";
@@ -9,9 +9,9 @@ import {
   Upload,
   X,
   FileAudio,
-  Clock,
+  // Clock, // No longer needed
   Loader2,
-  Info,
+  // Info, // No longer needed
   LayoutDashboard,
   FolderClock,
   Sparkles,
@@ -31,7 +31,7 @@ const containerVariants = {
   },
 };
 
-const itemVariants : Variants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -43,7 +43,7 @@ const itemVariants : Variants = {
   },
 };
 
-const floatingVariants : Variants = {
+const floatingVariants: Variants = {
   animate: {
     y: [0, -8, 0],
     transition: {
@@ -143,22 +143,24 @@ export default function PresentationAnalysisPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [topic, setTopic] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [analysisResultId, setAnalysisResultId] = useState<string | null>(null); // New state for result
   const router = useRouter();
 
-  const previousRecordings = [
-    { id: 1, topic: "Marketing Strategy 2024", date: "2024-01-15T14:30:00" },
-    { id: 2, topic: "Product Launch Presentation", date: "2024-01-10T11:20:00" },
-  ];
+  // const previousRecordings = [...]; // This is now removed
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setSelectedFile(e.target.files[0]);
+      setAnalysisResultId(null); // Clear previous result on new file select
     }
   };
 
   const clearFile = () => {
     setSelectedFile(null);
-    const fileInput = document.getElementById("audio-upload") as HTMLInputElement;
+    setAnalysisResultId(null); // Clear result when clearing file
+    const fileInput = document.getElementById(
+      "audio-upload",
+    ) as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   };
 
@@ -167,12 +169,24 @@ export default function PresentationAnalysisPage() {
     if (!selectedFile) return;
 
     setIsLoading(true);
+    setAnalysisResultId(null); // Clear any existing result ID
+
     // Simulate analysis delay
     setTimeout(() => {
+      const newId = `result-${Date.now()}`; // Simulate a unique ID from backend
       setIsLoading(false);
+      setAnalysisResultId(newId); // Set the new result ID
+
+      // Clear the form for the next upload
       setSelectedFile(null);
       setTopic("");
-      router.push(`/result/new-result-id`);
+      const fileInput = document.getElementById(
+        "audio-upload",
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+
+      // We no longer navigate here.
+      // router.push(`/result/new-result-id`);
     }, 3000);
   };
 
@@ -225,176 +239,197 @@ export default function PresentationAnalysisPage() {
             </motion.div>
 
             {/* Upload Section */}
-            <Card className="p-8 sm:p-10 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-slate-800 shadow-2xl hover:shadow-purple-500/10 hover:border-slate-700 transition-all duration-300 mb-16">
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* File Input */}
-                <div>
-                  <label
-                    htmlFor="audio-upload"
-                    className="block text-sm font-semibold text-white mb-3"
-                  >
-                    Upload Audio File
-                  </label>
+            <Card className="p-8 sm:p-10 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-slate-800 shadow-2xl hover:shadow-purple-500/10 hover:border-slate-700 transition-all duration-300 mb-16 min-h-[480px] flex items-center justify-center">
+              {/* === CONDITIONAL CONTENT === */}
 
-                  <div
-                    className={`flex ${
-                      selectedFile ? "justify-between" : "justify-center"
-                    } items-center w-full px-6 py-8 bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-700 transition-all duration-300 ${
-                      !selectedFile
-                        ? "hover:border-purple-500/50 hover:bg-slate-900/70 cursor-pointer"
-                        : ""
-                    }`}
+              {isLoading ? (
+                // 1. Loading State
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex flex-col items-center justify-center text-center p-8"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Number.POSITIVE_INFINITY,
+                      ease: "linear",
+                    }}
                   >
-                    {!selectedFile ? (
-                      <label
-                        htmlFor="audio-upload"
-                        className="flex flex-col items-center cursor-pointer w-full"
-                      >
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center mb-3 animate-bounce">
-                          <FileAudio className="w-6 h-6 text-purple-400" />
-                        </div>
-                        <span className="text-sm font-semibold text-white">
-                          Click to upload or drag & drop
-                        </span>
-                        <span className="text-xs text-slate-400 mt-1">
-                          MP3, WAV, M4A, or other audio formats
-                        </span>
-                      </label>
-                    ) : (
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center flex-shrink-0">
-                          <FileAudio className="w-5 h-5 text-purple-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">
-                            {selectedFile.name}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={clearFile}
-                          className="text-slate-400 hover:text-white hover:bg-slate-800/50 ml-4"
+                    <Loader2 className="w-20 h-20 text-purple-400" />
+                  </motion.div>
+                  <h3 className="text-2xl font-semibold text-white mt-6">
+                    Analyzing your presentation...
+                  </h3>
+                  <p className="text-slate-400 mt-2">
+                    This may take a few moments. Please wait.
+                  </p>
+                </motion.div>
+              ) : analysisResultId ? (
+                // 2. Result State
+                <motion.div
+                  key="result"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="flex flex-col items-center justify-center text-center p-8"
+                >
+                  <motion.div
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center mb-6"
+                    variants={pulseVariants}
+                    animate="animate"
+                  >
+                    <Sparkles className="w-10 h-10 text-purple-400" />
+                  </motion.div>
+                  <h3 className="text-3xl font-bold text-white">
+                    Analysis Complete!
+                  </h3>
+                  <p className="text-slate-400 mt-2 mb-8 max-w-md">
+                    Your presentation has been successfully analyzed. View the
+                    detailed report to see your results.
+                  </p>
+                  <Button
+                    onClick={() => router.push(`/result/${analysisResultId}`)}
+                    className="w-full max-w-xs bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/50"
+                  >
+                    View Results
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                  <Button
+                    variant="link"
+                    onClick={() => setAnalysisResultId(null)}
+                    className="text-purple-400 hover:text-purple-300 mt-4"
+                  >
+                    Analyze another file
+                  </Button>
+                </motion.div>
+              ) : (
+                // 3. Default Form State
+                <motion.form
+                  key="form"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-8 w-full"
+                >
+                  {/* File Input */}
+                  <div>
+                    <label
+                      htmlFor="audio-upload"
+                      className="block text-sm font-semibold text-white mb-3"
+                    >
+                      Upload Audio File
+                    </label>
+
+                    <div
+                      className={`flex ${
+                        selectedFile ? "justify-between" : "justify-center"
+                      } items-center w-full px-6 py-8 bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-700 transition-all duration-300 ${
+                        !selectedFile
+                          ? "hover:border-purple-500/50 hover:bg-slate-900/70 cursor-pointer"
+                          : ""
+                      }`}
+                    >
+                      {!selectedFile ? (
+                        <label
+                          htmlFor="audio-upload"
+                          className="flex flex-col items-center cursor-pointer w-full"
                         >
-                          <X className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    )}
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center mb-3 animate-bounce">
+                            <FileAudio className="w-6 h-6 text-purple-400" />
+                          </div>
+                          <span className="text-sm font-semibold text-white">
+                            Click to upload or drag & drop
+                          </span>
+                          <span className="text-xs text-slate-400 mt-1">
+                            MP3, WAV, M4A, or other audio formats
+                          </span>
+                        </label>
+                      ) : (
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center flex-shrink-0">
+                            <FileAudio className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                              {selectedFile.name}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={clearFile}
+                            className="text-slate-400 hover:text-white hover:bg-slate-800/50 ml-4"
+                            disabled={isLoading} // Also disable this
+                          >
+                            <X className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      )}
+                      <input
+                        id="audio-upload"
+                        type="file"
+                        className="hidden"
+                        accept="audio/*"
+                        onChange={handleFileChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Topic Input */}
+                  <div>
+                    <label
+                      htmlFor="topic"
+                      className="block text-sm font-semibold text-white mb-3"
+                    >
+                      Presentation Topic
+                    </label>
                     <input
-                      id="audio-upload"
-                      type="file"
-                      className="hidden"
-                      accept="audio/*"
-                      onChange={handleFileChange}
+                      id="topic"
+                      type="text"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white placeholder-slate-500 transition-all duration-200"
+                      placeholder="e.g., 'Q3 Marketing Strategy'"
+                      required
                       disabled={isLoading}
                     />
                   </div>
-                </div>
 
-                {/* Topic Input */}
-                <div>
-                  <label
-                    htmlFor="topic"
-                    className="block text-sm font-semibold text-white mb-3"
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/50"
+                    disabled={!selectedFile || isLoading}
                   >
-                    Presentation Topic
-                  </label>
-                  <input
-                    id="topic"
-                    type="text"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white placeholder-slate-500 transition-all duration-200"
-                    placeholder="e.g., 'Q3 Marketing Strategy'"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/50"
-                  disabled={!selectedFile || isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5 mr-2" />
-                      Analyze Presentation
-                    </>
-                  )}
-                </Button>
-              </form>
+                    {/* This button's loading state is fine as is */}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 mr-2" />
+                        Analyze Presentation
+                      </>
+                    )}
+                  </Button>
+                </motion.form>
+              )}
+              {/* === END CONDITIONAL CONTENT === */}
             </Card>
 
-            {/* Recent Analyses */}
-            <motion.div variants={containerVariants} initial="hidden" animate="visible">
-              <h2 className="text-2xl font-bold text-white mb-6">Recent Analyses</h2>
-              {previousRecordings.length > 0 ? (
-                <div className="grid gap-4">
-                  {previousRecordings.map((recording, index) => (
-                    <motion.div
-                      key={recording.id}
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <Card className="p-5 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-slate-800 hover:border-purple-500/30 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center">
-                              <FileAudio className="w-5 h-5 text-purple-400" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-white">
-                                {recording.topic}
-                              </h3>
-                              <div className="flex items-center gap-1.5 text-sm text-slate-400 mt-1">
-                                <Clock className="w-4 h-4" />
-                                {new Date(recording.date).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => router.push(`/result/${recording.id}`)}
-                            className="bg-slate-800 hover:bg-slate-700 text-purple-400 hover:text-purple-300 gap-2"
-                            size="sm"
-                          >
-                            View Results
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <Card className="p-12 bg-gradient-to-br from-slate-900/50 to-slate-900/30 backdrop-blur-xl border border-dashed border-slate-700 rounded-xl text-center">
-                  <div className="flex flex-col items-center">
-                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center mb-4 animate-pulse">
-                      <Info className="w-7 h-7 text-purple-400" />
-                    </div>
-                    <h3 className="font-semibold text-lg text-white mb-2">
-                      No analyses yet
-                    </h3>
-                    <p className="text-slate-400">
-                      Upload your first presentation to get started and see your
-                      results here.
-                    </p>
-                  </div>
-                </Card>
-              )}
-            </motion.div>
+            {/* Recent Analyses - THIS SECTION IS NOW REMOVED */}
           </div>
         </main>
       </div>
