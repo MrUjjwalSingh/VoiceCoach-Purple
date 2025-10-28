@@ -20,9 +20,9 @@ export default function TestJWTPage() {
     setLoading(true)
     try {
       const response = await protectedAPI.testProtectedRoute()
-      setResults(prev => ({ ...prev, protectedRoute: response }))
+      setResults((prev: any) => ({ ...prev, protectedRoute: response }))
     } catch (error) {
-      setResults(prev => ({ ...prev, protectedRoute: { error: 'Failed to test protected route' } }))
+      setResults((prev: any) => ({ ...prev, protectedRoute: { error: 'Failed to test protected route' } }))
     }
     setLoading(false)
   }
@@ -31,9 +31,9 @@ export default function TestJWTPage() {
     setLoading(true)
     try {
       const response = await protectedAPI.getUserProfile()
-      setResults(prev => ({ ...prev, userProfile: response }))
+      setResults((prev: any) => ({ ...prev, userProfile: response }))
     } catch (error) {
-      setResults(prev => ({ ...prev, userProfile: { error: 'Failed to fetch user profile' } }))
+      setResults((prev: any) => ({ ...prev, userProfile: { error: 'Failed to fetch user profile' } }))
     }
     setLoading(false)
   }
@@ -42,9 +42,9 @@ export default function TestJWTPage() {
     setLoading(true)
     try {
       const response = await protectedAPI.getDashboardData()
-      setResults(prev => ({ ...prev, dashboard: response }))
+      setResults((prev: any) => ({ ...prev, dashboard: response }))
     } catch (error) {
-      setResults(prev => ({ ...prev, dashboard: { error: 'Failed to fetch dashboard data' } }))
+      setResults((prev: any) => ({ ...prev, dashboard: { error: 'Failed to fetch dashboard data' } }))
     }
     setLoading(false)
   }
@@ -54,9 +54,9 @@ export default function TestJWTPage() {
     try {
       // This will automatically include the JWT token in headers
       const response = await api.get('/auth/test')
-      setResults(prev => ({ ...prev, customRequest: { success: true, data: response.data } }))
+      setResults((prev: any) => ({ ...prev, customRequest: { success: true, data: response.data } }))
     } catch (error: any) {
-      setResults(prev => ({ ...prev, customRequest: { error: error.response?.data?.message || 'Failed to make custom request' } }))
+      setResults((prev: any) => ({ ...prev, customRequest: { error: error.response?.data?.message || 'Failed to make custom request' } }))
     }
     setLoading(false)
   }
@@ -139,7 +139,7 @@ export default function TestJWTPage() {
               <p><strong>Basic API call:</strong> <code>api.get('/protected-route')</code></p>
               <p><strong>With data:</strong> <code>api.post('/endpoint', data)</code></p>
               <p><strong>Protected API:</strong> <code>protectedAPI.getUserProfile()</code></p>
-              <p><strong>Custom headers:</strong> <code>api.get('/route', { headers: { 'Custom-Header': 'value' } })</code></p>
+              <p><strong>Custom headers:</strong> <code>api.get('/route', &#123; headers: &#123; 'Custom-Header': 'value' &#125; &#125;)</code></p>
             </div>
           </div>
         </div>

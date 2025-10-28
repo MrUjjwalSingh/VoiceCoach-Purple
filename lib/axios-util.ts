@@ -3,7 +3,7 @@ import { getAuthToken, removeAuthToken } from './auth-utils'
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://voicecoachbackend.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },

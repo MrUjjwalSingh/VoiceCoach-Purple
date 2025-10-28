@@ -435,11 +435,11 @@ ${slide.visual_suggestion}
                         required
                       >
                         <option value="0.5">0.5 minutes</option>
-                        <option value="1">1 minute</option>
-                        <option value="2">2 minutes</option>
-                        <option value="3">3 minutes</option>
-                        <option value="4">4 minutes</option>
-                        <option value="5">5 minutes</option>
+                        <option value="1.0">1 minute</option>
+                        <option value="2.0">2 minutes</option>
+                        <option value="3.0">3 minutes</option>
+                        <option value="4.0">4 minutes</option>
+                        <option value="5.0">5 minutes</option>
                       </select>
                       <Clock className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                     </div>

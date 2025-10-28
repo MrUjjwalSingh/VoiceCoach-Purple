@@ -13,6 +13,7 @@ import {
   ChevronRight,
   User,
   LogOut,
+  Presentation,
 } from "lucide-react";
 import { getUserEmail } from "@/lib/auth-utils";
 
@@ -76,6 +77,12 @@ export default function UnifiedSidebar() {
       icon: Sparkles,
       active: pathname === "/presentation-suggestor"
     },
+    // {
+    //   label: "Ai presentation",
+    //   href: "/voice-over",
+    //   icon: Presentation,
+    //   active: pathname === "/voice-over"
+    // },
     { 
       label: "History", 
       href: "/history", 

@@ -1,23 +1,15 @@
 "use client";
 
-import { Variants, motion } from "framer-motion";
-import { useState, type FormEvent, useEffect, ChangeEvent } from "react";
+import { motion } from "framer-motion";
+import { useState, type FormEvent, useEffect, useRef } from "react";
 import { Spotlight } from "../_components/ui/spotlight";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  FileAudio,
-  LayoutDashboard,
-  Sparkles,
-  Archive,
-  FileText,
-  Presentation,
-  MicVocal, // New Icon
   Wand2,
-  ChevronDown,
-  Waves, // New Icon for loading
+  Waves,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import UnifiedSidebar from "../_components/layout/unified-sidebar";
 
 
 
@@ -109,17 +101,6 @@ function writeString(view: DataView, offset: number, str: string) {
 }
 
 // --- Animation Variants ---
-const floatingVariants: Variants = {
-  animate: {
-    y: [0, -8, 0],
-    transition: {
-      duration: 3,
-      repeat: Number.POSITIVE_INFINITY,
-      ease: "easeInOut",
-    },
-  },
-};
-
 const pulseVariants = {
   animate: {
     scale: [1, 1.1, 1],
@@ -131,92 +112,198 @@ const pulseVariants = {
   },
 };
 
-// --- Prebuilt Voices ---
-const voices = [
-  { name: "Kore", description: "Firm" },
-  { name: "Puck", description: "Upbeat" },
-  { name: "Zephyr", description: "Bright" },
-  { name: "Charon", description: "Informative" },
-  { name: "Fenrir", description: "Excitable" },
-  { name: "Leda", description: "Youthful" },
-  { name: "Orus", description: "Firm" },
-  { name: "Aoede", description: "Breezy" },
-  { name: "Callirrhoe", description: "Easy-going" },
-  { name: "Algenib", description: "Gravelly" },
-];
+// --- Modern Audio Player Component ---
+const ModernAudioPlayer = ({ audioUrl }: { audioUrl: string }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-// --- Dashboard Sidebar ---
-const DashboardSidebar = () => (
-  <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 p-6 hidden md:block flex-shrink-0">
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-2xl p-6 border border-purple-500/20">
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+        preload="metadata"
+      />
+      
+      <div className="flex flex-col gap-4">
+        {/* Play/Pause Button */}
+        <div className="flex items-center justify-center">
+          <motion.button
+            onClick={togglePlay}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/50 hover:shadow-purple-500/75 transition-all"
+          >
+            {isPlaying ? (
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+              </svg>
+            ) : (
+              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </motion.button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+            style={{
+              background: `linear-gradient(to right, rgb(168 85 247) 0%, rgb(168 85 247) ${(currentTime / (duration || 1)) * 100}%, rgb(51 65 85) ${(currentTime / (duration || 1)) * 100}%, rgb(51 65 85) 100%)`
+            }}
+          />
+          <div className="flex justify-between text-sm text-slate-400">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: rgb(168 85 247);
+          cursor: pointer;
+          box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+        }
+        .slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: rgb(168 85 247);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// --- Result Display Component ---
+const ResultDisplay = ({ result, onReset }: { result: PresentationResult; onReset: () => void }) => {
+  return (
     <motion.div
-      className="flex items-center gap-2 mb-8"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
+      key="result"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="space-y-6"
     >
-      <motion.div
-        className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-        variants={floatingVariants}
-        animate="animate"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </motion.div>
-      <h2 className="text-lg font-bold text-white">Analyze</h2>
-    </motion.div>
+      {/* Success Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-3xl font-bold text-white mb-2">
+            Your Presentation is Ready!
+          </h3>
+          <p className="text-slate-400">
+            Generated for: <span className="text-purple-400 font-semibold">{result.topic}</span>
+          </p>
+        </div>
+        <Button
+          onClick={onReset}
+          variant="outline"
+          className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+        >
+          Generate Another
+        </Button>
+      </div>
 
-    <nav className="space-y-2">
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-sm font-medium">Dashboard</span>
-      </motion.a>
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileAudio className="w-5 h-5" />
-        <span className="text-sm">Analysis</span>
-      </motion.a>
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <Archive className="w-5 h-5" />
-        <span className="text-sm font-medium">History</span>
-      </motion.a>
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <FileText className="w-5 h-5" />
-        <span className="text-sm font-medium">Content Generation</span>
-      </motion.a>
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <Presentation className="w-5 h-5" />
-        <span className="text-sm font-medium">Presentation Generator</span>
-      </motion.a>
-      {/* --- New Active Link --- */}
-      <motion.a
-        href="#"
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 font-medium transition-all duration-200"
-        whileHover={{ x: 4 }}
-      >
-        <MicVocal className="w-5 h-5" />
-        <span className="text-sm font-medium">VoiceOver Studio</span>
-      </motion.a>
-    </nav>
-  </aside>
-);
+      {/* Stats Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="p-4 bg-slate-900/50 border border-slate-700">
+          <div className="text-sm text-slate-400 mb-1">Duration</div>
+          <div className="text-2xl font-bold text-white">{result.time_limit_minutes} min</div>
+        </Card>
+        <Card className="p-4 bg-slate-900/50 border border-slate-700">
+          <div className="text-sm text-slate-400 mb-1">Word Count</div>
+          <div className="text-2xl font-bold text-white">{result.estimated_word_count}</div>
+        </Card>
+        <Card className="p-4 bg-slate-900/50 border border-slate-700">
+          <div className="text-sm text-slate-400 mb-1">Words/Min</div>
+          <div className="text-2xl font-bold text-white">
+            {Math.round(result.estimated_word_count / result.time_limit_minutes)}
+          </div>
+        </Card>
+      </div>
+
+      {/* Audio Player */}
+      <div>
+        <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+          <div className="w-1.5 h-4 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full" />
+          Listen to Your Presentation
+        </h4>
+        <ModernAudioPlayer audioUrl={result.audio_file_url} />
+      </div>
+
+      {/* Script Display */}
+      <div>
+        <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+          <div className="w-1.5 h-4 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full" />
+          Full Voiceover Script
+        </h4>
+        <Card className="p-6 bg-slate-900/50 border border-slate-700 rounded-lg max-h-96 overflow-y-auto">
+          <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
+            {result.full_voiceover_script}
+          </p>
+        </Card>
+      </div>
+    </motion.div>
+  );
+};
 
 // --- Header ---
 const Header = () => (
@@ -226,7 +313,7 @@ const Header = () => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5 }}
   >
-    <h1 className="text-base font-semibold text-white">Presentation Analysis</h1>
+    <h1 className="text-base font-semibold text-white">AI Presentation</h1>
     <div className="flex-1" />
     <motion.div whileHover={{ scale: 1.05 }}>
       <Button
@@ -240,111 +327,72 @@ const Header = () => (
 );
 
 // --- Page Component ---
+interface PresentationResult {
+  topic: string;
+  time_limit_minutes: number;
+  estimated_word_count: number;
+  full_voiceover_script: string;
+  audio_file_url: string;
+}
+
 export default function VoiceOverPage() {
-  const [script, setScript] = useState(
-    "Hello, this is a test of the new voiceover studio. I can use this to practice my pacing and fluency."
+  const [topic, setTopic] = useState(
+    "Artificial Intelligence in Healthcare"
   );
-  const [voiceMode, setVoiceMode] = useState("coaching"); // 'coaching' or 'natural'
-  const [selectedVoice, setSelectedVoice] = useState("Kore");
+  const [timeLimit, setTimeLimit] = useState("0.5"); // Time limit in minutes
   const [isLoading, setIsLoading] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<PresentationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Clean up Blob URL when component unmounts or URL changes
+  // Clean up when component unmounts
   useEffect(() => {
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
+      // Cleanup if needed
     };
-  }, [audioUrl]);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!script) return;
+    if (!topic) return;
 
     setIsLoading(true);
-    setAudioUrl(null);
+    setResult(null);
     setError(null);
 
-    // 1. Construct the prompt
-    let ttsPrompt = script;
-    if (voiceMode === "coaching") {
-      ttsPrompt = `Speak the following text clearly and deliberately, as if coaching someone on pronunciation and pacing. Add distinct pauses at commas and full stops. Put emphasis on key verbs and nouns: \n\n"${script}"`;
-    }
-
-    // 2. Define the API payload
-    const payload = {
-      contents: [
-        {
-          parts: [{ text: ttsPrompt }],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: selectedVoice },
-          },
-        },
-      },
-      model: "gemini-2.5-flash-preview-tts",
-    };
-
-    const apiKey = ""; // API key is handled by the environment
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-
+    // TODO: Replace with actual API call
+    // This is a mock implementation for now
     try {
-      // 3. Call the API
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      // Simulating API call - replace with actual endpoint
+      const mockResponse: PresentationResult = {
+        topic: topic,
+        time_limit_minutes: parseFloat(timeLimit),
+        estimated_word_count: Math.round(parseFloat(timeLimit) * 150), // Approximate words per minute
+        full_voiceover_script: `Welcome to today's presentation on ${topic}. This is a comprehensive exploration of the topic that will take approximately ${timeLimit} minutes. We'll cover key concepts, current trends, and practical applications. Let's begin with an overview of the fundamentals and build up to more advanced concepts. Throughout this presentation, we'll examine real-world examples and case studies that illustrate the importance of this topic. In conclusion, we've explored various aspects of ${topic}, and I hope this presentation has provided valuable insights for your consideration.`,
+        audio_file_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Mock audio URL
+      };
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const part = result?.candidates?.[0]?.content?.parts?.[0];
-      const audioData = part?.inlineData?.data;
-      const mimeType = part?.inlineData?.mimeType;
-
-      if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
-        // 4. Process the audio
-        const sampleRateMatch = mimeType.match(/rate=(\d+)/);
-        const sampleRate = sampleRateMatch
-          ? parseInt(sampleRateMatch[1], 10)
-          : 24000; // Default to 24000 if not specified
-
-        const pcmData = base64ToArrayBuffer(audioData);
-        const pcm16 = new Int16Array(pcmData);
-        const wavBlob = pcmToWav(pcm16, sampleRate);
-        const wavUrl = URL.createObjectURL(wavBlob);
-
-        setAudioUrl(wavUrl);
-      } else {
-        throw new Error("Invalid audio data received from API.");
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setResult(mockResponse);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to generate audio.");
+      setError(err.message || "Failed to generate presentation.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleReset = () => {
-    setAudioUrl(null);
+    setResult(null);
     setError(null);
   };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white">
-      <DashboardSidebar />
+      <UnifiedSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-72">
         <Header />
 
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
@@ -367,7 +415,7 @@ export default function VoiceOverPage() {
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1 h-6 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full" />
                 <span className="text-sm font-semibold text-purple-400 uppercase tracking-wide">
-                  AI-Powered Pacing
+                  AI Presentation Generator
                 </span>
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
@@ -377,8 +425,8 @@ export default function VoiceOverPage() {
                 </span>
               </h1>
               <p className="text-lg text-slate-400 max-w-2xl">
-                Practice your script with an AI coach. Hear it read naturally,
-                or get a guided lesson on pacing and fluency.
+                Generate AI-powered presentations on any topic with customizable
+                time limits. Perfect for practice, learning, and inspiration.
               </p>
             </motion.div>
 
@@ -409,28 +457,9 @@ export default function VoiceOverPage() {
                     This may take a moment.
                   </p>
                 </motion.div>
-              ) : audioUrl ? (
+              ) : result ? (
                 // 2. Result State
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                >
-                  <h3 className="text-2xl font-bold text-white mb-6">
-                    Your Generated Audio
-                  </h3>
-                  <Card className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg">
-                    
-                  </Card>
-                  <Button
-                    variant="link"
-                    onClick={handleReset}
-                    className="text-purple-400 hover:text-purple-300 mt-8"
-                  >
-                    Generate Another
-                  </Button>
-                </motion.div>
+                <ResultDisplay result={result} onReset={handleReset} />
               ) : (
                 // 3. Default Form State
                 <motion.form
@@ -441,103 +470,63 @@ export default function VoiceOverPage() {
                   onSubmit={handleSubmit}
                   className="space-y-8"
                 >
-                  {/* Script Input */}
+                  {/* Topic Input */}
                   <div>
                     <label
-                      htmlFor="script"
+                      htmlFor="topic"
                       className="block text-sm font-semibold text-white mb-3"
                     >
-                      Enter Your Script
+                      Enter Your Topic
                     </label>
-                    <textarea
-                      id="script"
-                      rows={8}
-                      value={script}
-                      onChange={(e) => setScript(e.target.value)}
+                    <input
+                      id="topic"
+                      type="text"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
                       className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white placeholder-slate-500 transition-all duration-200"
-                      placeholder="e.g., 'Hello world, this is my presentation...'"
+                      placeholder="e.g., 'Climate Change and Renewable Energy'"
                       required
                     />
                   </div>
 
-                  {/* Voice Mode */}
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-3">
-                      Select Voice Mode
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <label
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          voiceMode === "coaching"
-                            ? "border-purple-500 bg-purple-500/10"
-                            : "border-slate-700 hover:border-slate-500"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="voiceMode"
-                          value="coaching"
-                          checked={voiceMode === "coaching"}
-                          onChange={() => setVoiceMode("coaching")}
-                          className="hidden"
-                        />
-                        <span className="font-semibold text-white">
-                          Coaching Voice
-                        </span>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Slow, deliberate pacing with clear pauses. Best for
-                          practice.
-                        </p>
-                      </label>
-                      <label
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          voiceMode === "natural"
-                            ? "border-purple-500 bg-purple-500/10"
-                            : "border-slate-700 hover:border-slate-500"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="voiceMode"
-                          value="natural"
-                          checked={voiceMode === "natural"}
-                          onChange={() => setVoiceMode("natural")}
-                          className="hidden"
-                        />
-                        <span className="font-semibold text-white">
-                          Natural Voice
-                        </span>
-                        <p className="text-xs text-slate-400 mt-1">
-                          A polished, realistic voiceover. Best for final
-                          output.
-                        </p>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Voice Selection */}
+                  {/* Time Limit */}
                   <div>
                     <label
-                      htmlFor="voice"
+                      htmlFor="timeLimit"
                       className="block text-sm font-semibold text-white mb-3"
                     >
-                      Select Voice
+                      Select Time Limit
                     </label>
-                    <div className="relative">
-                      <select
-                        id="voice"
-                        value={selectedVoice}
-                        onChange={(e) => setSelectedVoice(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-white transition-all duration-200 appearance-none"
-                        required
-                      >
-                        {voices.map((voice) => (
-                          <option key={voice.name} value={voice.name}>
-                            {voice.name} ({voice.description})
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-5 h-5 text-slate-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <div className="grid grid-cols-5 md:grid-cols-5 gap-2">
+                      {[
+                        { label: "30 sec", value: "0.5" },
+                        { label: "1 min", value: "1.0" },
+                        { label: "2 min", value: "2.0" },
+                        { label: "3 min", value: "3.0" },
+                        { label: "4 min", value: "4.0" },
+                        { label: "5 min", value: "5.0" },
+                      ].map((time) => (
+                        <label
+                          key={time.value}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all text-center ${
+                            timeLimit === time.value
+                              ? "border-purple-500 bg-purple-500/10"
+                              : "border-slate-700 hover:border-slate-500"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="timeLimit"
+                            value={time.value}
+                            checked={timeLimit === time.value}
+                            onChange={(e) => setTimeLimit(e.target.value)}
+                            className="hidden"
+                          />
+                          <span className="font-semibold text-white text-sm">
+                            {time.label}
+                          </span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
