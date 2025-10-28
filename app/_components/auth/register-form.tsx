@@ -46,7 +46,7 @@ export default function RegisterForm() {
     setIsLoading(true)
     
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      const res = await axios.post("https://voicecoachbackend.onrender.com/api/auth/register", {
         username: formData.fullName,
         email: formData.email,
         password: formData.password,
