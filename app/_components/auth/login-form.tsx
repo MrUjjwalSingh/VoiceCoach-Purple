@@ -8,27 +8,50 @@ import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { authAPI } from "@/lib/axios-util"
+import { setAuthToken } from "@/lib/auth-utils"
+import { useRouter } from "next/navigation"
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
+  const router = useRouter()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    // Clear error when user starts typing
+    if (error) setError("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    console.log("Login:", formData)
+    setError("")
+    
+    try {
+      const response = await authAPI.login(formData.email, formData.password)
+      
+      if (response.success && response.data?.token) {
+        // Store JWT token in localStorage
+        setAuthToken(response.data.token, formData.email)
+        
+        // Redirect to Dashboard
+        router.push("/dashboard")
+      } else {
+        setError(response.error || "Login failed. Please try again.")
+      }
+    } catch (err: any) {
+      setError("Network error. Please check your connection.")
+    } finally {
+      setIsLoading(false)
+    }
+    
   }
 
   return (
@@ -92,6 +115,17 @@ export default function LoginForm() {
             Forgot password?
           </Link>
         </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm"
+          >
+            {error}
+          </motion.div>
+        )}
 
         {/* Submit Button */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>

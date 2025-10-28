@@ -18,7 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${plusJakarta.className} bg-background text-foreground`}>{children}</body>
+      <body className={`${plusJakarta.className} bg-background text-foreground`}>
+        {children}
+      </body>
     </html>
   )
 }

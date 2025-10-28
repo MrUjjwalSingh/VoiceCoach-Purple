@@ -9,12 +9,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Effects */}
+      <Spotlight className="top-0 left-0" fill="rgba(139, 92, 246, 0.6)" />
       <Spotlight className="top-20 left-10" fill="rgba(139, 92, 246, 0.6)" />
       <Spotlight className="top-40 right-20" fill="rgba(168, 123, 250, 0.5)" />
       <Spotlight className="bottom-20 left-1/2" fill="rgba(192, 132, 252, 0.55)" />
       
       {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/15" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-primary/15" />
       
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4">

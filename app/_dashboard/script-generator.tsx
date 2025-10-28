@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion"
 import { useState } from "react"
-import ScriptInputForm from "../_components/dashboard/script-input-form"
-import ScriptDisplay from "../_components/dashboard/script-display"
+import ScriptInputForm from "../_components/speechCoach/script-input-form"
+import ScriptDisplay from "../_components/speechCoach/script-display"
 
 interface GeneratedScript {
   topic: string
